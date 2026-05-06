@@ -564,6 +564,14 @@ function App() {
             <h2 id="output-heading">
               {activeTrack?.result ? "Converted MP3 ready" : "Ready when analysis completes"}
             </h2>
+            {activeTrack?.result?.alignment ? (
+              <p className="alignment-summary">
+                <strong>Metronome aligned</strong>
+                <span>
+                  First beat matched to {activeTrack.result.alignment.targetBpm || activeTrack.result.targetBpm} BPM grid
+                </span>
+              </p>
+            ) : null}
           </div>
           <dl>
             <div>

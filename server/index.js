@@ -6,6 +6,7 @@ import path from "node:path";
 import MusicTempo from "music-tempo";
 import {
   adjustBpmForMode,
+  buildTempoAlignmentPlan,
   calculateTempoFactor,
   chooseAnalysisWindow,
   clearStorage,
@@ -96,6 +97,7 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
     const samples = await decodeToMonoPcm(filePath, analysisWindow);
     const mt = new MusicTempo(Array.from(samples));
     const detectedBpm = normalizeBpm(mt.tempo);
+    const detectedBeats = Array.isArray(mt.beats) ? mt.beats : [];
 
     const record = {
       fileId,
@@ -104,6 +106,7 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
       mimeType: req.file.mimetype,
       size: req.file.size,
       detectedBpm,
+      detectedBeats,
       duration,
       createdAt: Date.now()
     };
@@ -144,15 +147,27 @@ app.post("/api/convert", async (req, res, next) => {
     const adjustedSourceBpm = adjustBpmForMode(sourceBpm, sourceMode);
     const normalizedTargetBpm = normalizeBpm(targetBpm);
     const tempoFactor = calculateTempoFactor(adjustedSourceBpm, normalizedTargetBpm);
+    const alignment = buildTempoAlignmentPlan({
+      sourceBpm: adjustedSourceBpm,
+      targetBpm: normalizedTargetBpm,
+      sourceBeats: record.detectedBeats,
+      durationSeconds: record.duration
+    });
     const outputPath = createOutputFilePath(fileId);
 
-    await convertTempo(record.inputPath, outputPath, tempoFactor);
+    await convertTempo(record.inputPath, outputPath, {
+      sourceBpm: adjustedSourceBpm,
+      targetBpm: normalizedTargetBpm,
+      sourceBeats: record.detectedBeats,
+      durationSeconds: record.duration
+    });
     const stats = await fs.stat(outputPath);
 
     record.outputPath = outputPath;
     record.targetBpm = normalizedTargetBpm;
     record.adjustedSourceBpm = adjustedSourceBpm;
     record.tempoFactor = tempoFactor;
+    record.alignment = alignment;
     record.outputSize = stats.size;
     files.set(fileId, record);
 
@@ -162,6 +177,7 @@ app.post("/api/convert", async (req, res, next) => {
       adjustedSourceBpm,
       targetBpm: normalizedTargetBpm,
       tempoFactor,
+      alignment,
       outputSize: stats.size,
       downloadUrl: `/api/download/${fileId}`
     });

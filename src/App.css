@@ -817,6 +817,22 @@ h2 {
   font-size: 1rem;
 }
 
+.alignment-summary {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.alignment-summary strong {
+  color: var(--lime);
+}
+
+.alignment-summary span {
+  display: block;
+}
+
 .output-bar dl {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

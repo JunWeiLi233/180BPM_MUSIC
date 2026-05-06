@@ -63,6 +63,7 @@ async function main() {
   await page.getByLabel("Source BPM").fill("120");
   await page.getByRole("button", { name: "Convert to 180 BPM" }).click();
   await page.getByRole("link", { name: "Download", exact: true }).waitFor({ timeout: 30000 });
+  await page.getByText("Metronome aligned").waitFor({ timeout: 30000 });
 
   const href = await page.getByRole("link", { name: "Download", exact: true }).getAttribute("href");
   if (!href?.startsWith("/api/download/")) {

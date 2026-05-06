@@ -71,6 +71,82 @@ export function buildAtempoChain(factor) {
   return filters.map((value) => `atempo=${value}`).join(",");
 }
 
+function roundSeconds(value, precision = 3) {
+  return Math.round(Number(value) * 10 ** precision) / 10 ** precision;
+}
+
+function formatSeconds(value) {
+  return String(roundSeconds(value)).replace(/\.?0+$/, "");
+}
+
+export function buildMetronomeGrid(targetBpm, durationSeconds) {
+  const target = normalizeBpm(targetBpm);
+  const duration = Math.max(0, Number(durationSeconds) || 0);
+  const interval = 60 / target;
+  const beats = [];
+
+  for (let beatTime = 0; beatTime <= duration + 1e-9; beatTime += interval) {
+    beats.push(roundSeconds(beatTime));
+  }
+
+  return beats;
+}
+
+function findNearestMetronomeBeat(beatSeconds, metronomeGridSeconds) {
+  if (!metronomeGridSeconds.length) return 0;
+
+  return metronomeGridSeconds.reduce((nearest, candidate) => {
+    const currentDistance = Math.abs(candidate - beatSeconds);
+    const nearestDistance = Math.abs(nearest - beatSeconds);
+    return currentDistance < nearestDistance ? candidate : nearest;
+  }, metronomeGridSeconds[0]);
+}
+
+export function buildTempoAlignmentPlan({
+  sourceBpm,
+  targetBpm,
+  sourceBeats = [],
+  durationSeconds = 0
+}) {
+  const source = normalizeBpm(sourceBpm);
+  const target = normalizeBpm(targetBpm);
+  const tempoFactor = calculateTempoFactor(source, target);
+  const sourceFirstBeatSeconds = roundSeconds(
+    sourceBeats.find((beat) => Number.isFinite(Number(beat)) && Number(beat) >= 0) || 0
+  );
+  const stretchedDurationSeconds = roundSeconds((Number(durationSeconds) || 0) / tempoFactor);
+  const stretchedFirstBeatSeconds = roundSeconds(sourceFirstBeatSeconds / tempoFactor);
+  const metronomeGridSeconds = buildMetronomeGrid(targetBpm, stretchedDurationSeconds);
+  const metronomeFirstBeatSeconds = findNearestMetronomeBeat(stretchedFirstBeatSeconds, metronomeGridSeconds);
+  const phaseShiftSeconds = roundSeconds(stretchedFirstBeatSeconds - metronomeFirstBeatSeconds);
+
+  return {
+    sourceBpm: source,
+    targetBpm: target,
+    tempoFactor,
+    sourceFirstBeatSeconds,
+    stretchedFirstBeatSeconds,
+    stretchedDurationSeconds,
+    metronomeFirstBeatSeconds,
+    metronomeGridSeconds,
+    trimAfterTempoSeconds: Math.max(0, phaseShiftSeconds),
+    delayBeforeAudioSeconds: Math.max(0, -phaseShiftSeconds)
+  };
+}
+
+export function buildTempoAlignmentFilter(options) {
+  const plan = buildTempoAlignmentPlan(options);
+  const filters = [buildAtempoChain(plan.tempoFactor)];
+
+  if (plan.trimAfterTempoSeconds > 0) {
+    filters.push(`atrim=start=${formatSeconds(plan.trimAfterTempoSeconds)}`, "asetpts=PTS-STARTPTS");
+  } else if (plan.delayBeforeAudioSeconds > 0) {
+    filters.push(`adelay=${Math.round(plan.delayBeforeAudioSeconds * 1000)}:all=1`);
+  }
+
+  return filters.join(",");
+}
+
 export function getSafeExtension(fileName = "", fallback = ".bin") {
   const extension = path.extname(fileName).toLowerCase().replace(/[^.a-z0-9]/g, "");
   return extension || fallback;
@@ -211,8 +287,11 @@ export async function probeDuration(filePath) {
   return Math.round((Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds)) * 10) / 10;
 }
 
-export async function convertTempo(inputPath, outputPath, tempoFactor) {
-  const filter = buildAtempoChain(tempoFactor);
+export async function convertTempo(inputPath, outputPath, tempoFactorOrOptions) {
+  const filter =
+    typeof tempoFactorOrOptions === "number"
+      ? buildAtempoChain(tempoFactorOrOptions)
+      : buildTempoAlignmentFilter(tempoFactorOrOptions);
 
   await runFfmpeg([
     "-hide_banner",

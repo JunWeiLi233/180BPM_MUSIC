@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   adjustBpmForMode,
   buildAtempoChain,
+  buildMetronomeGrid,
+  buildTempoAlignmentPlan,
+  buildTempoAlignmentFilter,
   calculateTempoFactor,
   chooseAnalysisWindow,
   isValidBpm,
@@ -49,5 +52,39 @@ describe("audio utilities", () => {
       .map((part) => Number(part.replace("atempo=", "")));
 
     expect(parts.every((part) => part >= 0.5 && part <= 2)).toBe(true);
+  });
+
+  it("sets up a target metronome grid for the requested BPM", () => {
+    expect(buildMetronomeGrid(180, 1.1)).toEqual([0, 0.333, 0.667, 1]);
+    expect(buildMetronomeGrid(120, 2.1)).toEqual([0, 0.5, 1, 1.5, 2]);
+  });
+
+  it("plans tempo stretch and first-beat alignment to the metronome", () => {
+    const plan = buildTempoAlignmentPlan({
+      sourceBpm: 120,
+      targetBpm: 180,
+      sourceBeats: [0.24, 0.74, 1.24],
+      durationSeconds: 8
+    });
+
+    expect(plan.tempoFactor).toBe(1.5);
+    expect(plan.sourceBpm).toBe(120);
+    expect(plan.targetBpm).toBe(180);
+    expect(plan.sourceFirstBeatSeconds).toBe(0.24);
+    expect(plan.stretchedFirstBeatSeconds).toBe(0.16);
+    expect(plan.metronomeFirstBeatSeconds).toBe(0);
+    expect(plan.trimAfterTempoSeconds).toBe(0.16);
+    expect(plan.metronomeGridSeconds.slice(0, 3)).toEqual([0, 0.333, 0.667]);
+  });
+
+  it("builds an FFmpeg filter that stretches then aligns audio to the metronome", () => {
+    const filter = buildTempoAlignmentFilter({
+      sourceBpm: 120,
+      targetBpm: 180,
+      sourceBeats: [0.24, 0.74, 1.24],
+      durationSeconds: 8
+    });
+
+    expect(filter).toBe("atempo=1.5,atrim=start=0.16,asetpts=PTS-STARTPTS");
   });
 });

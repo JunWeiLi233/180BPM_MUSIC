@@ -59,10 +59,13 @@ describe("audio conversion API", () => {
       .expect(200);
 
     expect(convert.body.tempoFactor).toBe(1.5);
+    expect(convert.body.alignment.tempoFactor).toBe(1.5);
+    expect(convert.body.alignment.targetBpm).toBe(180);
+    expect(convert.body.alignment.metronomeGridSeconds.length).toBeGreaterThan(5);
+    expect(convert.body.alignment.sourceFirstBeatSeconds).toBeTypeOf("number");
     expect(convert.body.downloadUrl).toBe(`/api/download/${analyze.body.fileId}`);
     expect(convert.body.outputSize).toBeGreaterThan(1000);
 
     await request(app).get(convert.body.downloadUrl).expect(200);
   }, 30000);
 });
-
