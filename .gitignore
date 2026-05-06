@@ -1,0 +1,8 @@
+node_modules/
+dist/
+server/storage/*
+!server/storage/.gitkeep
+docs/superpowers/*.png
+npm-debug.log*
+.env
+.env.*
