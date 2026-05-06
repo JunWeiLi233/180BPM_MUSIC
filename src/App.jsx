@@ -154,6 +154,7 @@ function App() {
   const [status, setStatus] = useState(() => createMessage("status.ready"));
   const [error, setError] = useState(null);
   const [tracks, setTracks] = useState([]);
+  const tracksRef = useRef([]);
   const [activeTrackId, setActiveTrackId] = useState(null);
 
   const t = useMemo(() => createTranslator(language), [language]);
@@ -163,6 +164,10 @@ function App() {
     document.documentElement.dir = getLanguageDirection(language);
     persistLanguage(language);
   }, [language]);
+
+  useEffect(() => {
+    tracksRef.current = tracks;
+  }, [tracks]);
 
   const statusText = renderMessage(status, t);
 
@@ -192,9 +197,11 @@ function App() {
   const errorText = renderMessage(error, t);
 
   function updateTrack(localId, patch) {
-    setTracks((currentTracks) =>
-      currentTracks.map((track) => (track.localId === localId ? { ...track, ...patch } : track))
+    const nextTracks = tracksRef.current.map((track) =>
+      track.localId === localId ? { ...track, ...patch } : track
     );
+    tracksRef.current = nextTracks;
+    setTracks(nextTracks);
   }
 
   async function analyzeOneFile(file, localId) {
@@ -271,20 +278,29 @@ function App() {
       error: null
     }));
 
-    setTracks((currentTracks) => [...currentTracks, ...newTracks]);
+    setTracks((currentTracks) => {
+      const nextTracks = [...currentTracks, ...newTracks];
+      tracksRef.current = nextTracks;
+      return nextTracks;
+    });
     setActiveTrackId(newTracks[0].localId);
     setStatus(createMessage(pluralKey("status.analyzing", newTracks.length), { count: newTracks.length }));
 
-    const results = await Promise.all(
-      newTracks.map((track, index) => analyzeOneFile(accepted[index], track.localId))
-    );
-    const successCount = results.filter((result) => result.ok).length;
+    await Promise.all(newTracks.map((track, index) => analyzeOneFile(accepted[index], track.localId)));
+    const newTrackIds = new Set(newTracks.map((track) => track.localId));
 
-    setStatus(
-      successCount
+    setStatus((currentStatus) => {
+      const remainingNewTracks = tracksRef.current.filter((track) => newTrackIds.has(track.localId));
+
+      if (!remainingNewTracks.length) {
+        return tracksRef.current.length ? currentStatus : createMessage("status.ready");
+      }
+
+      const successCount = remainingNewTracks.filter((track) => canConvertTrack(track)).length;
+      return successCount
         ? createMessage(pluralKey("status.tracksReady", successCount), { count: successCount })
-        : createMessage("status.analyzeFailed")
-    );
+        : createMessage("status.analyzeFailed");
+    });
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -345,6 +361,7 @@ function App() {
     const remaining = tracks.filter((track) => track.localId !== localId);
     if (remaining.length === tracks.length) return;
 
+    tracksRef.current = remaining;
     setTracks(remaining);
     setActiveTrackId((currentId) => {
       if (currentId !== localId) return currentId;
@@ -357,6 +374,7 @@ function App() {
   }
 
   function resetTracks() {
+    tracksRef.current = [];
     setTracks([]);
     setActiveTrackId(null);
     setError(null);

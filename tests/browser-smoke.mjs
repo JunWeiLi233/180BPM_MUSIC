@@ -7,6 +7,10 @@ import { createTranslator } from "../src/i18n.js";
 
 const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
 async function createClickTrack(filePath) {
   await runFfmpeg([
     "-hide_banner",
@@ -36,8 +40,12 @@ async function createClickTrack(filePath) {
 async function main() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-browser-"));
   const audioPath = path.join(tempDir, "runner-click.wav");
+  const secondAudioPath = path.join(tempDir, "runner-click-next.wav");
+  const conversionAudioPath = path.join(tempDir, "runner-click-convert.wav");
   const zh = createTranslator("zh");
   await createClickTrack(audioPath);
+  await createClickTrack(secondAudioPath);
+  await createClickTrack(conversionAudioPath);
 
   const browser = await chromium.launch({
     executablePath: chromePath,
@@ -68,10 +76,33 @@ async function main() {
 
   await page.getByLabel("Language").selectOption("zh");
   await page.getByRole("heading", { name: zh("upload.heading") }).waitFor();
+
+  let delayedAnalyze = true;
+  await page.route("**/api/analyze", async (route) => {
+    if (delayedAnalyze) {
+      delayedAnalyze = false;
+      await delay(1200);
+    }
+    await route.continue();
+  });
+
+  const delayedAnalyzeResponse = page.waitForResponse("**/api/analyze");
   await page.locator('input[type="file"]').setInputFiles(audioPath);
+  await page.getByRole("button", { name: zh("track.removeAria", { name: "runner-click.wav" }) }).click();
+  await page.getByText(zh("upload.emptyTitle")).waitFor();
+  await page.getByText(zh("status.ready"), { exact: true }).waitFor({ timeout: 5000 });
+  await delayedAnalyzeResponse;
+  await page.waitForTimeout(500);
+  if (await page.getByText(zh("status.tracksReady_one", { count: 1 }), { exact: true }).count()) {
+    throw new Error("Removed track reappeared in processing status after delayed analysis completed.");
+  }
+
+  await page.unroute("**/api/analyze");
+
+  await page.locator('input[type="file"]').setInputFiles(secondAudioPath);
   await page.getByText(zh("status.tracksReady_one", { count: 1 }), { exact: true }).waitFor({ timeout: 20000 });
   await page
-    .getByRole("button", { name: zh("track.removeAria", { name: "runner-click.wav" }) })
+    .getByRole("button", { name: zh("track.removeAria", { name: "runner-click-next.wav" }) })
     .click();
   await page.getByText(zh("upload.emptyTitle")).waitFor();
   await page.getByText(zh("status.ready"), { exact: true }).waitFor({ timeout: 5000 });
@@ -82,7 +113,7 @@ async function main() {
   await page.getByLabel(zh("language.label")).selectOption("en");
   await page.getByRole("heading", { name: "Upload tracks" }).waitFor();
 
-  await page.locator('input[type="file"]').setInputFiles(audioPath);
+  await page.locator('input[type="file"]').setInputFiles(conversionAudioPath);
   await page.getByText("Ready to convert").waitFor({ timeout: 20000 });
 
   await page.getByLabel("Source BPM").fill("120");
