@@ -9,6 +9,7 @@ import {
 const DEFAULT_TARGET_BPM = 180;
 const TARGET_PRESETS = [160, 170, 180, 190];
 const METRONOME_VOLUME_LEVELS = ["low", "medium", "high"];
+const METRONOME_SOUND_TYPES = ["pulse", "drum"];
 const ACCEPTED_TYPES = "audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.aiff,.aif";
 const LANGUAGE_STORAGE_KEY = "beats-your-music-language";
 
@@ -75,6 +76,7 @@ function withTrackDefaults(track) {
     sourceMode: "normal",
     mixMetronome: Boolean(track.mixMetronome),
     metronomeVolume: track.metronomeVolume || "medium",
+    metronomeSound: track.metronomeSound || "pulse",
     phase: track.phase || "ready",
     result: null,
     error: null
@@ -273,6 +275,7 @@ function App() {
       sourceMode: "normal",
       mixMetronome: false,
       metronomeVolume: "medium",
+      metronomeSound: "pulse",
       phase: "analyzing",
       result: null,
       error: null
@@ -331,7 +334,8 @@ function App() {
           targetBpm: track.targetBpm,
           sourceMode: track.sourceMode,
           mixMetronome: Boolean(track.mixMetronome),
-          metronomeVolume: track.metronomeVolume || "medium"
+          metronomeVolume: track.metronomeVolume || "medium",
+          metronomeSound: track.metronomeSound || "pulse"
         })
       });
       const payload = await response.json();
@@ -661,6 +665,21 @@ function App() {
               </span>
             </label>
 
+            <fieldset className="metronome-sound" disabled={!activeTrack || !activeTrack.mixMetronome}>
+              <legend>{t("conversion.metronomeSound")}</legend>
+              {METRONOME_SOUND_TYPES.map((sound) => (
+                <button
+                  key={sound}
+                  className={(activeTrack?.metronomeSound || "pulse") === sound ? "is-selected" : ""}
+                  type="button"
+                  onClick={() => updateActiveTrack({ metronomeSound: sound })}
+                  aria-pressed={(activeTrack?.metronomeSound || "pulse") === sound}
+                >
+                  {t(`metronomeSound.${sound}`)}
+                </button>
+              ))}
+            </fieldset>
+
             <fieldset className="metronome-volume" disabled={!activeTrack || !activeTrack.mixMetronome}>
               <legend>{t("conversion.metronomeVolume")}</legend>
               {METRONOME_VOLUME_LEVELS.map((level) => (
@@ -740,7 +759,8 @@ function App() {
                 <strong>{t("output.metronomeMixed")}</strong>
                 <span>
                   {t("output.metronomeMixedDetail", {
-                    level: t(`metronomeVolume.${activeTrack.result.metronomeVolume || "medium"}`)
+                    level: t(`metronomeVolume.${activeTrack.result.metronomeVolume || "medium"}`),
+                    sound: t(`metronomeSound.${activeTrack.result.metronomeSound || "pulse"}`)
                   })}
                 </span>
               </p>

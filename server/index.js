@@ -21,6 +21,7 @@ import {
   isValidBpm,
   MAX_FILE_BYTES,
   normalizeBpm,
+  normalizeMetronomeSound,
   normalizeMetronomeVolume,
   OUTPUT_DIR,
   probeDuration,
@@ -149,7 +150,8 @@ app.post("/api/convert", async (req, res, next) => {
       targetBpm,
       sourceMode = "normal",
       mixMetronome = false,
-      metronomeVolume = "medium"
+      metronomeVolume = "medium",
+      metronomeSound = "pulse"
     } = req.body;
     const record = files.get(fileId);
 
@@ -166,6 +168,7 @@ app.post("/api/convert", async (req, res, next) => {
     const adjustedSourceBpm = adjustBpmForMode(sourceBpm, sourceMode);
     const normalizedTargetBpm = normalizeBpm(targetBpm);
     const normalizedMetronomeVolume = normalizeMetronomeVolume(metronomeVolume);
+    const normalizedMetronomeSound = normalizeMetronomeSound(metronomeSound);
     const tempoFactor = calculateTempoFactor(adjustedSourceBpm, normalizedTargetBpm);
     const alignment = buildTempoAlignmentPlan({
       sourceBpm: adjustedSourceBpm,
@@ -181,7 +184,8 @@ app.post("/api/convert", async (req, res, next) => {
       sourceBeats: record.detectedBeats,
       durationSeconds: record.duration,
       mixMetronome: Boolean(mixMetronome),
-      metronomeVolume: normalizedMetronomeVolume
+      metronomeVolume: normalizedMetronomeVolume,
+      metronomeSound: normalizedMetronomeSound
     });
     const stats = await fs.stat(outputPath);
 
@@ -192,6 +196,7 @@ app.post("/api/convert", async (req, res, next) => {
     record.alignment = alignment;
     record.metronomeMixed = Boolean(mixMetronome);
     record.metronomeVolume = normalizedMetronomeVolume;
+    record.metronomeSound = normalizedMetronomeSound;
     record.outputSize = stats.size;
     files.set(fileId, record);
 
@@ -204,6 +209,7 @@ app.post("/api/convert", async (req, res, next) => {
       alignment,
       metronomeMixed: record.metronomeMixed,
       metronomeVolume: record.metronomeVolume,
+      metronomeSound: record.metronomeSound,
       outputSize: stats.size,
       downloadUrl: `/api/download/${fileId}`
     });

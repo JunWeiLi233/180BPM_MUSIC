@@ -14,6 +14,7 @@ import {
   getMetronomeMixWeight,
   chooseAnalysisWindow,
   isValidBpm,
+  normalizeMetronomeSound,
   normalizeMetronomeVolume,
   normalizeBpm
 } from "../server/audio-utils.js";
@@ -149,11 +150,24 @@ describe("audio utilities", () => {
     expect(filter).toBe("atempo=1.5,atrim=start=0.16,asetpts=PTS-STARTPTS");
   });
 
-  it("builds a target-BPM click source for a background metronome", () => {
-    const source = buildMetronomeClickSource(180, 8);
+  it("builds an electronic target-BPM click source for a background metronome", () => {
+    const source = buildMetronomeClickSource(180, 8, "pulse");
 
     expect(source).toContain("aevalsrc=exprs=");
     expect(source).toContain("mod(t\\,0.333");
+    expect(source).toContain("1200");
+    expect(source).not.toContain("exp(-");
+    expect(source).toContain("s=44100");
+    expect(source).toContain("d=8");
+  });
+
+  it("builds a drum-like target-BPM click source for a physical metronome", () => {
+    const source = buildMetronomeClickSource(180, 8, "drum");
+
+    expect(source).toContain("aevalsrc=exprs=");
+    expect(source).toContain("mod(t\\,0.333");
+    expect(source).toContain("exp(-");
+    expect(source).toContain("95");
     expect(source).toContain("s=44100");
     expect(source).toContain("d=8");
   });
@@ -168,6 +182,12 @@ describe("audio utilities", () => {
     expect(getMetronomeMixWeight("high")).toBe(0.3);
   });
 
+  it("normalizes the two metronome sound options", () => {
+    expect(normalizeMetronomeSound("pulse")).toBe("pulse");
+    expect(normalizeMetronomeSound("drum")).toBe("drum");
+    expect(normalizeMetronomeSound("invalid")).toBe("pulse");
+  });
+
   it("adds a lavfi click input and mixes it when metronome output is enabled", () => {
     const args = buildTempoConversionArgs("input.wav", "output.mp3", {
       sourceBpm: 120,
@@ -175,7 +195,8 @@ describe("audio utilities", () => {
       sourceBeats: [0.24, 0.74, 1.24],
       durationSeconds: 8,
       mixMetronome: true,
-      metronomeVolume: "high"
+      metronomeVolume: "high",
+      metronomeSound: "drum"
     });
     const joined = args.join(" ");
 
@@ -183,6 +204,7 @@ describe("audio utilities", () => {
     expect(args).toContain("lavfi");
     expect(args).toContain("-filter_complex");
     expect(joined).toContain("[0:a]atempo=1.5");
+    expect(joined).toContain("exp(-");
     expect(joined).toContain("amix=inputs=2");
     expect(joined).toContain("weights=1 0.3");
     expect(joined).toContain("duration=first");

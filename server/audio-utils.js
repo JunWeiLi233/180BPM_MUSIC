@@ -22,6 +22,7 @@ const METRONOME_MIX_WEIGHTS = {
   medium: 0.18,
   high: 0.3
 };
+const METRONOME_SOUND_TYPES = new Set(["pulse", "drum"]);
 const EXPLICIT_BPM_FILE_NAME_PATTERN = /(?:^|[-_\s])(\d{2,3}(?:\.\d{1,2})?)\s*bpm(?:\.[^.]+)?$/i;
 const METADATA_BPM_KEYS = new Set(["bpm", "tbpm"]);
 
@@ -161,13 +162,22 @@ export function chooseDetectedTempo({
   };
 }
 
-export function buildMetronomeClickSource(targetBpm, durationSeconds) {
+export function normalizeMetronomeSound(value = "pulse") {
+  const sound = String(value || "").toLowerCase();
+  return METRONOME_SOUND_TYPES.has(sound) ? sound : "pulse";
+}
+
+export function buildMetronomeClickSource(targetBpm, durationSeconds, soundType = "pulse") {
   const target = normalizeBpm(targetBpm);
+  const sound = normalizeMetronomeSound(soundType);
   const intervalSeconds = formatSeconds(60 / target);
-  const clickSeconds = formatSeconds(METRONOME_CLICK_SECONDS);
+  const beatPhase = `mod(t\\,${intervalSeconds})`;
   const expression =
-    `if(lt(mod(t\\,${intervalSeconds})\\,${clickSeconds})\\,` +
-    `${METRONOME_CLICK_AMPLITUDE}*sin(2*PI*${METRONOME_CLICK_FREQUENCY}*t)\\,0)`;
+    sound === "drum"
+      ? `if(lt(${beatPhase}\\,0.12)\\,` +
+        `0.75*exp(-${beatPhase}*35)*sin(2*PI*(95+140*exp(-${beatPhase}*18))*${beatPhase})\\,0)`
+      : `if(lt(${beatPhase}\\,${formatSeconds(METRONOME_CLICK_SECONDS)})\\,` +
+        `${METRONOME_CLICK_AMPLITUDE}*sin(2*PI*${METRONOME_CLICK_FREQUENCY}*t)\\,0)`;
   const parts = [`aevalsrc=exprs=${expression}`, "s=44100"];
   const duration = Number(durationSeconds);
 
@@ -266,7 +276,11 @@ export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOpt
       "-f",
       "lavfi",
       "-i",
-      buildMetronomeClickSource(plan.targetBpm, getConvertedDurationSeconds(plan))
+      buildMetronomeClickSource(
+        plan.targetBpm,
+        getConvertedDurationSeconds(plan),
+        tempoFactorOrOptions.metronomeSound
+      )
     );
   }
 
