@@ -18,9 +18,9 @@ const METRONOME_CLICK_SECONDS = 0.03;
 const METRONOME_CLICK_FREQUENCY = 1200;
 const METRONOME_CLICK_AMPLITUDE = 0.55;
 const METRONOME_MIX_WEIGHTS = {
-  low: 0.1,
-  medium: 0.18,
-  high: 0.3
+  low: 0.16,
+  medium: 0.28,
+  high: 0.48
 };
 const METRONOME_SOUND_TYPES = new Set(["pulse", "drum"]);
 const EXPLICIT_BPM_FILE_NAME_PATTERN = /(?:^|[-_\s])(\d{2,3}(?:\.\d{1,2})?)\s*bpm(?:\.[^.]+)?$/i;
@@ -311,9 +311,7 @@ export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOpt
     args.push(
       "-filter_complex",
       `[0:a]${filter}[music];` +
-        "[1:a]asplit=2[metro_mix][metro_key];" +
-        "[music][metro_key]sidechaincompress=threshold=0.035:ratio=12:attack=2:release=110[music_ducked];" +
-        `[music_ducked][metro_mix]amix=inputs=2:duration=first:weights=1 ${metronomeMixWeight}:normalize=0,` +
+        `[music][1:a]amix=inputs=2:duration=first:weights=1 ${metronomeMixWeight}:normalize=0,` +
         "alimiter=limit=0.98[out]",
       "-map",
       "[out]"

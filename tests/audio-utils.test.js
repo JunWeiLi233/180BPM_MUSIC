@@ -180,9 +180,9 @@ describe("audio utilities", () => {
     expect(normalizeMetronomeVolume("medium")).toBe("medium");
     expect(normalizeMetronomeVolume("high")).toBe("high");
     expect(normalizeMetronomeVolume("invalid")).toBe("medium");
-    expect(getMetronomeMixWeight("low")).toBe(0.1);
-    expect(getMetronomeMixWeight("medium")).toBe(0.18);
-    expect(getMetronomeMixWeight("high")).toBe(0.3);
+    expect(getMetronomeMixWeight("low")).toBe(0.16);
+    expect(getMetronomeMixWeight("medium")).toBe(0.28);
+    expect(getMetronomeMixWeight("high")).toBe(0.48);
   });
 
   it("normalizes the two metronome sound options", () => {
@@ -208,14 +208,11 @@ describe("audio utilities", () => {
     expect(args).toContain("-filter_complex");
     expect(joined).toContain("[0:a]atempo=1.5");
     expect(joined).toContain("exp(-");
-    expect(joined).toContain("[1:a]asplit=2[metro_mix][metro_key]");
-    expect(joined).toContain("[music][metro_key]sidechaincompress=");
-    expect(joined).toContain("threshold=0.035");
-    expect(joined).toContain("ratio=12");
-    expect(joined).toContain("release=110");
-    expect(joined).toContain("[music_ducked][metro_mix]amix=inputs=2");
+    expect(joined).not.toContain("sidechaincompress");
+    expect(joined).not.toContain("music_ducked");
+    expect(joined).toContain("[music][1:a]amix=inputs=2");
     expect(joined).toContain("amix=inputs=2");
-    expect(joined).toContain("weights=1 0.3");
+    expect(joined).toContain("weights=1 0.48");
     expect(joined).toContain("duration=first");
     expect(joined).toContain("-map [out]");
   });
