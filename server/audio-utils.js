@@ -311,7 +311,9 @@ export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOpt
     args.push(
       "-filter_complex",
       `[0:a]${filter}[music];` +
-        `[music][1:a]amix=inputs=2:duration=first:weights=1 ${metronomeMixWeight}:normalize=0,` +
+        "[1:a]asplit=2[metro_mix][metro_key];" +
+        "[music][metro_key]sidechaincompress=threshold=0.035:ratio=12:attack=2:release=110[music_ducked];" +
+        `[music_ducked][metro_mix]amix=inputs=2:duration=first:weights=1 ${metronomeMixWeight}:normalize=0,` +
         "alimiter=limit=0.98[out]",
       "-map",
       "[out]"

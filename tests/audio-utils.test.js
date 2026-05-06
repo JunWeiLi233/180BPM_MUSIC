@@ -208,6 +208,12 @@ describe("audio utilities", () => {
     expect(args).toContain("-filter_complex");
     expect(joined).toContain("[0:a]atempo=1.5");
     expect(joined).toContain("exp(-");
+    expect(joined).toContain("[1:a]asplit=2[metro_mix][metro_key]");
+    expect(joined).toContain("[music][metro_key]sidechaincompress=");
+    expect(joined).toContain("threshold=0.035");
+    expect(joined).toContain("ratio=12");
+    expect(joined).toContain("release=110");
+    expect(joined).toContain("[music_ducked][metro_mix]amix=inputs=2");
     expect(joined).toContain("amix=inputs=2");
     expect(joined).toContain("weights=1 0.3");
     expect(joined).toContain("duration=first");
