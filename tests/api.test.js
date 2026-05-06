@@ -6,7 +6,12 @@ import request from "supertest";
 import { app } from "../server/index.js";
 import { runFfmpeg } from "../server/audio-utils.js";
 
-async function createClickTrack(filePath) {
+async function createClickTrack(filePath, bpm = 120, seconds = 8) {
+  const intervalSeconds = 60 / bpm;
+  const silenceSeconds = Math.max(0.01, intervalSeconds - 0.035);
+  const loopSampleCount = Math.round(intervalSeconds * 44100);
+  const loops = Math.ceil(seconds / intervalSeconds) + 2;
+
   await runFfmpeg([
     "-hide_banner",
     "-loglevel",
@@ -19,11 +24,11 @@ async function createClickTrack(filePath) {
     "-f",
     "lavfi",
     "-i",
-    "anullsrc=r=44100:cl=mono:duration=0.465",
+    `anullsrc=r=44100:cl=mono:duration=${silenceSeconds}`,
     "-filter_complex",
-    "[0:a][1:a]concat=n=2:v=0:a=1[beat];[beat]aloop=loop=15:size=22050:start=0",
+    `[0:a][1:a]concat=n=2:v=0:a=1[beat];[beat]aloop=loop=${loops}:size=${loopSampleCount}:start=0`,
     "-t",
-    "8",
+    String(seconds),
     "-ac",
     "1",
     "-ar",
@@ -33,6 +38,23 @@ async function createClickTrack(filePath) {
 }
 
 describe("audio conversion API", () => {
+  it("detects supported tempos outside the library default range", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-your-music-range-"));
+
+    for (const bpm of [45, 240]) {
+      const inputPath = path.join(tempDir, `click-${bpm}.wav`);
+      await createClickTrack(inputPath, bpm, 32);
+
+      const analyze = await request(app)
+        .post("/api/analyze")
+        .attach("track", inputPath)
+        .expect(200);
+
+      expect(analyze.body.detectedBpm).toBeCloseTo(bpm, 1);
+      expect(analyze.body.detectionSource).toBe("analysis");
+    }
+  }, 60000);
+
   it("uses the BPM suffix when an app-converted MP3 is uploaded again", async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-your-music-reupload-"));
     const inputPath = path.join(tempDir, "runner-180bpm.mp3");

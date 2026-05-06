@@ -40,6 +40,13 @@ export function calculateTempoFactor(sourceBpm, targetBpm) {
   return Math.round((target / source) * 10000) / 10000;
 }
 
+export function createMusicTempoOptions() {
+  return {
+    maxBeatInterval: Math.round((60 / MIN_BPM) * 10000) / 10000,
+    minBeatInterval: Math.round((60 / MAX_BPM) * 10000) / 10000
+  };
+}
+
 export function adjustBpmForMode(bpm, mode = "normal") {
   const source = normalizeBpm(bpm);
 

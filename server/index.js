@@ -13,6 +13,7 @@ import {
   clearStorage,
   convertTempo,
   createOutputFilePath,
+  createMusicTempoOptions,
   createStoredFilePath,
   decodeToMonoPcm,
   ensureStorage,
@@ -98,7 +99,7 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
     const metadata = await readAudioMetadata(filePath);
     const analysisWindow = chooseAnalysisWindow(duration);
     const samples = await decodeToMonoPcm(filePath, analysisWindow);
-    const mt = new MusicTempo(Array.from(samples));
+    const mt = new MusicTempo(Array.from(samples), createMusicTempoOptions());
     const tempoResult = chooseDetectedTempo({
       originalName: req.file.originalname,
       metadata,

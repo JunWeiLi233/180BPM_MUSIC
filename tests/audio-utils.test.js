@@ -9,6 +9,7 @@ import {
   buildTempoAlignmentFilter,
   calculateTempoFactor,
   chooseDetectedTempo,
+  createMusicTempoOptions,
   extractBpmFromFileName,
   chooseAnalysisWindow,
   isValidBpm,
@@ -31,6 +32,13 @@ describe("audio utilities", () => {
   it("calculates target/source tempo factor", () => {
     expect(calculateTempoFactor(150, 180)).toBe(1.2);
     expect(calculateTempoFactor(180, 90)).toBe(0.5);
+  });
+
+  it("configures tempo detection for the full supported BPM range", () => {
+    expect(createMusicTempoOptions()).toEqual({
+      maxBeatInterval: 1.5,
+      minBeatInterval: 0.2308
+    });
   });
 
   it("adjusts source BPM for half-time and double-time detections", () => {
