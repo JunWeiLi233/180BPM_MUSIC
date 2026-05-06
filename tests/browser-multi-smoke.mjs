@@ -44,7 +44,7 @@ async function main() {
     headless: true
   });
 
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+  const page = await browser.newPage({ viewport: { width: 1121, height: 1100 } });
   const consoleErrors = [];
   const pageErrors = [];
 
@@ -63,6 +63,26 @@ async function main() {
   await queue.getByText("runner-click-a.wav").waitFor({ timeout: 25000 });
   await queue.getByText("runner-click-b.wav").waitFor({ timeout: 25000 });
   await page.getByText("2 tracks loaded").waitFor({ timeout: 25000 });
+
+  const activeTrackLayout = await page.locator(".track-strip.is-active").evaluate((row) => {
+    const meta = row.querySelector(".track-meta");
+
+    return {
+      clientWidth: row.clientWidth,
+      scrollWidth: row.scrollWidth,
+      metaClientWidth: meta?.clientWidth ?? 0
+    };
+  });
+  if (activeTrackLayout.scrollWidth > activeTrackLayout.clientWidth) {
+    throw new Error(
+      `Active track row overflowed: ${activeTrackLayout.scrollWidth}px content in ${activeTrackLayout.clientWidth}px row.`
+    );
+  }
+  if (activeTrackLayout.metaClientWidth < 160) {
+    throw new Error(
+      `Active track metadata collapsed to ${activeTrackLayout.metaClientWidth}px at constrained desktop width.`
+    );
+  }
 
   const convertButtons = queue.getByRole("button", { name: "Convert to 180 BPM" });
   const count = await convertButtons.count();

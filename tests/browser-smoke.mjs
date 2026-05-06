@@ -56,6 +56,9 @@ async function main() {
   await page.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
   await page.getByRole("heading", { name: "Beats Your Music" }).waitFor();
   await page.getByLabel("Default target BPM is 180").waitFor();
+  if (await page.getByText("Processed on this localhost server").count()) {
+    throw new Error("Hosted UI still shows localhost processing copy.");
+  }
 
   await page.locator('input[type="file"]').setInputFiles(audioPath);
   await page.getByText("Ready to convert").waitFor({ timeout: 20000 });

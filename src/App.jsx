@@ -296,14 +296,6 @@ function App() {
             <b>BPM</b>
           </div>
 
-          <div className="privacy-note">
-            <span className="shield" aria-hidden="true" />
-            <div>
-              <strong>Processed on this localhost server</strong>
-              <span>Storage clears on server start and hourly cleanup</span>
-            </div>
-          </div>
-
           <div className="process-status" aria-live="polite">
             <span>Process status</span>
             <strong>{statusText}</strong>
@@ -627,7 +619,7 @@ function App() {
           </div>
         ) : null}
         <p className="retention-footnote">
-          Uploaded and converted files are stored only under this app's local server/storage folder, cleared when the server starts, and removed after about 1 hour while the server is running.
+          Uploaded and converted files are stored temporarily for processing and automatically removed after about 1 hour.
         </p>
       </section>
     </main>

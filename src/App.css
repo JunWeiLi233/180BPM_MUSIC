@@ -96,7 +96,7 @@ input:focus-visible {
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(280px, 1.4fr) auto minmax(260px, 1fr) auto;
+  grid-template-columns: minmax(280px, 1.4fr) auto auto;
   gap: 14px;
   align-items: center;
   padding: 18px 20px;
@@ -223,31 +223,6 @@ h2 {
 .target-chip strong {
   font-size: 1.85rem;
   line-height: 1;
-}
-
-.privacy-note {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-}
-
-.privacy-note strong,
-.privacy-note span {
-  display: block;
-}
-
-.privacy-note strong {
-  margin-bottom: 4px;
-  color: var(--text);
-}
-
-.shield {
-  width: 30px;
-  height: 34px;
-  border: 2px solid var(--line);
-  border-radius: 14px 14px 18px 18px;
-  box-shadow: inset 0 -12px 0 rgba(156, 240, 50, 0.12);
 }
 
 .process-status {
@@ -396,7 +371,10 @@ h2 {
 
 .track-strip {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) minmax(92px, auto) minmax(150px, auto) auto 44px;
+  grid-template-areas:
+    "select meta bpm remove"
+    "select action download remove";
+  grid-template-columns: 72px minmax(0, 1fr) minmax(92px, auto) 44px;
   gap: 12px;
   align-items: center;
   padding: 12px;
@@ -413,6 +391,7 @@ h2 {
 }
 
 .track-select {
+  grid-area: select;
   display: block;
   width: 72px;
   height: 72px;
@@ -449,6 +428,10 @@ h2 {
   gap: 6px;
 }
 
+.track-meta {
+  grid-area: meta;
+}
+
 .track-meta strong {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -467,6 +450,7 @@ h2 {
 }
 
 .track-bpm {
+  grid-area: bpm;
   text-align: right;
 }
 
@@ -475,6 +459,8 @@ h2 {
 }
 
 .icon-button {
+  grid-area: remove;
+  align-self: start;
   width: 44px;
   height: 44px;
   border: 1px solid transparent;
@@ -503,6 +489,9 @@ h2 {
 }
 
 .row-action {
+  grid-area: action;
+  width: 100%;
+  min-width: 0;
   padding: 0 14px;
   border: 1px solid rgba(156, 240, 50, 0.58);
   background: rgba(156, 240, 50, 0.12);
@@ -516,6 +505,9 @@ h2 {
 }
 
 .row-download {
+  grid-area: download;
+  width: 100%;
+  min-width: 0;
   padding: 0 12px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.04);
@@ -957,6 +949,12 @@ h2 {
   }
 }
 
+@media (max-width: 1320px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1120px) {
   .topbar,
   .workspace-grid,
@@ -1001,7 +999,6 @@ h2 {
   }
 
   .brand-block,
-  .privacy-note,
   .lane-heading,
   .actions {
     align-items: stretch;
@@ -1023,6 +1020,11 @@ h2 {
   }
 
   .track-strip {
+    grid-template-areas:
+      "select meta remove"
+      "bpm bpm bpm"
+      "action action action"
+      "download download download";
     grid-template-columns: 56px 1fr 44px;
   }
 
