@@ -1,8 +1,25 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  SUPPORTED_LANGUAGES,
+  createTranslator,
+  getInitialLanguage,
+  getLanguageDirection
+} from "./i18n.js";
 
 const DEFAULT_TARGET_BPM = 180;
 const TARGET_PRESETS = [160, 170, 180, 190];
 const ACCEPTED_TYPES = "audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.aiff,.aif";
+const LANGUAGE_STORAGE_KEY = "beats-your-music-language";
+
+const SERVER_ERROR_KEYS = {
+  "BPM analysis failed.": "error.bpmAnalysisFailed",
+  "Conversion failed.": "error.conversionFailed",
+  "Source and target BPM must be between 40 and 260.": "error.sourceTargetBpm",
+  "This upload expired. Upload the track again.": "error.uploadExpired",
+  "Choose an audio file to analyze.": "error.chooseAudio",
+  "Upload a supported audio file.": "error.supportedAudio",
+  "Audio files must be 80 MB or smaller.": "error.fileTooLarge"
+};
 
 function formatBytes(bytes = 0) {
   if (!bytes) return "0 B";
@@ -12,8 +29,8 @@ function formatBytes(bytes = 0) {
   return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
-function formatDuration(seconds) {
-  if (!Number.isFinite(seconds)) return "Unknown length";
+function formatDuration(seconds, t) {
+  if (!Number.isFinite(seconds)) return t("track.unknownLength");
   const rounded = Math.max(0, Math.round(seconds));
   const minutes = Math.floor(rounded / 60);
   const remaining = String(rounded % 60).padStart(2, "0");
@@ -57,7 +74,7 @@ function withTrackDefaults(track) {
     sourceMode: "normal",
     phase: track.phase || "ready",
     result: null,
-    error: ""
+    error: null
   };
 }
 
@@ -70,13 +87,52 @@ function canConvertTrack(track) {
   return adjustedSource >= 40 && adjustedSource <= 260 && track.targetBpm >= 40 && track.targetBpm <= 260;
 }
 
+function pluralKey(baseKey, count) {
+  return `${baseKey}_${count === 1 ? "one" : "other"}`;
+}
+
+function createMessage(key, values = {}) {
+  return { key, values };
+}
+
+function createErrorMessage(message, fallbackKey) {
+  const key = SERVER_ERROR_KEYS[message] || fallbackKey;
+  return key ? createMessage(key) : { fallback: message };
+}
+
+function renderMessage(message, t) {
+  if (!message) return "";
+  if (typeof message === "string") return message;
+  if (message.key) return t(message.key, message.values);
+  return message.fallback || "";
+}
+
+function persistLanguage(language) {
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch {
+    // Language selection still works for the current session if storage is unavailable.
+  }
+}
+
 function App() {
   const inputRef = useRef(null);
+  const [language, setLanguage] = useState(() => getInitialLanguage());
   const [dragging, setDragging] = useState(false);
-  const [statusText, setStatusText] = useState("Ready");
-  const [error, setError] = useState("");
+  const [status, setStatus] = useState(() => createMessage("status.ready"));
+  const [error, setError] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [activeTrackId, setActiveTrackId] = useState(null);
+
+  const t = useMemo(() => createTranslator(language), [language]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = getLanguageDirection(language);
+    persistLanguage(language);
+  }, [language]);
+
+  const statusText = renderMessage(status, t);
 
   const activeTrack = useMemo(
     () => tracks.find((track) => track.localId === activeTrackId) || tracks[0] || null,
@@ -101,6 +157,7 @@ function App() {
   const largeShift = tempoFactor && (tempoFactor < 0.75 || tempoFactor > 1.35);
   const loadedCount = tracks.filter((track) => track.fileId).length;
   const targetChipBpm = activeTrack?.targetBpm || DEFAULT_TARGET_BPM;
+  const errorText = renderMessage(error, t);
 
   function updateTrack(localId, patch) {
     setTracks((currentTracks) =>
@@ -126,11 +183,12 @@ function App() {
       updateTrack(localId, withTrackDefaults(payload));
       return { ok: true };
     } catch (analysisError) {
+      const localizedError = createErrorMessage(analysisError.message, "error.bpmAnalysisFailed");
       updateTrack(localId, {
         phase: "error",
-        error: analysisError.message
+        error: localizedError
       });
-      return { ok: false, error: analysisError.message };
+      return { ok: false, error: localizedError };
     }
   }
 
@@ -138,7 +196,7 @@ function App() {
     const files = Array.from(fileList || []);
     if (!files.length) return;
 
-    setError("");
+    setError(null);
 
     const accepted = [];
     const rejected = [];
@@ -152,11 +210,15 @@ function App() {
     });
 
     if (rejected.length) {
-      setError(`Skipped unsupported file${rejected.length === 1 ? "" : "s"}: ${rejected.join(", ")}.`);
+      setError(
+        createMessage(pluralKey("error.skippedUnsupported", rejected.length), {
+          files: rejected.join(", ")
+        })
+      );
     }
 
     if (!accepted.length) {
-      setStatusText("Invalid file");
+      setStatus(createMessage("status.invalidFile"));
       return;
     }
 
@@ -164,7 +226,7 @@ function App() {
       localId: createClientId(file, index),
       originalName: file.name,
       size: file.size,
-      mimeType: file.type || "Audio file",
+      mimeType: file.type || "",
       duration: null,
       detectedBpm: null,
       sourceBpm: "",
@@ -172,22 +234,22 @@ function App() {
       sourceMode: "normal",
       phase: "analyzing",
       result: null,
-      error: ""
+      error: null
     }));
 
     setTracks((currentTracks) => [...currentTracks, ...newTracks]);
     setActiveTrackId(newTracks[0].localId);
-    setStatusText(`Analyzing ${newTracks.length} track${newTracks.length === 1 ? "" : "s"}`);
+    setStatus(createMessage(pluralKey("status.analyzing", newTracks.length), { count: newTracks.length }));
 
     const results = await Promise.all(
       newTracks.map((track, index) => analyzeOneFile(accepted[index], track.localId))
     );
     const successCount = results.filter((result) => result.ok).length;
 
-    setStatusText(
+    setStatus(
       successCount
-        ? `${successCount} track${successCount === 1 ? "" : "s"} ready to convert`
-        : "Analyze failed"
+        ? createMessage(pluralKey("status.tracksReady", successCount), { count: successCount })
+        : createMessage("status.analyzeFailed")
     );
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -199,14 +261,14 @@ function App() {
     if (!canConvertTrack(track)) return;
 
     try {
-      setError("");
+      setError(null);
       updateTrack(localId, {
         phase: "converting",
         result: null,
-        error: ""
+        error: null
       });
       setActiveTrackId(localId);
-      setStatusText("Stretching audio. Large files can take a minute.");
+      setStatus(createMessage("status.stretching"));
 
       const response = await fetch("/api/convert", {
         method: "POST",
@@ -229,16 +291,17 @@ function App() {
       updateTrack(localId, {
         phase: "complete",
         result: payload,
-        error: ""
+        error: null
       });
-      setStatusText("Download ready");
+      setStatus(createMessage("status.downloadReady"));
     } catch (conversionError) {
+      const localizedError = createErrorMessage(conversionError.message, "error.conversionFailed");
       updateTrack(localId, {
         phase: "error",
-        error: conversionError.message
+        error: localizedError
       });
-      setStatusText("Conversion failed");
-      setError(conversionError.message);
+      setStatus(createMessage("status.conversionFailed"));
+      setError(localizedError);
     }
   }
 
@@ -254,8 +317,8 @@ function App() {
   function resetTracks() {
     setTracks([]);
     setActiveTrackId(null);
-    setError("");
-    setStatusText("Ready");
+    setError(null);
+    setStatus(createMessage("status.ready"));
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -285,19 +348,30 @@ function App() {
               <span />
             </div>
             <div>
-              <p className="eyebrow">Local tempo workstation</p>
+              <p className="eyebrow">{t("brand.eyebrow")}</p>
               <h1 id="app-title">Beats Your Music</h1>
             </div>
           </div>
 
-          <div className="target-chip" aria-label={`Default target BPM is ${DEFAULT_TARGET_BPM}`}>
-            <span>Target</span>
+          <div className="target-chip" aria-label={t("target.aria", { bpm: DEFAULT_TARGET_BPM })}>
+            <span>{t("target.label")}</span>
             <strong>{targetChipBpm}</strong>
             <b>BPM</b>
           </div>
 
+          <label className="language-picker">
+            <span>{t("language.label")}</span>
+            <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+              {SUPPORTED_LANGUAGES.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div className="process-status" aria-live="polite">
-            <span>Process status</span>
+            <span>{t("process.label")}</span>
             <strong>{statusText}</strong>
           </div>
         </header>
@@ -306,10 +380,14 @@ function App() {
           <section className="panel upload-panel" aria-labelledby="upload-heading">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Input</p>
-                <h2 id="upload-heading">Upload tracks</h2>
+                <p className="eyebrow">{t("upload.eyebrow")}</p>
+                <h2 id="upload-heading">{t("upload.heading")}</h2>
               </div>
-              {loadedCount ? <strong className="count-chip">{loadedCount} tracks loaded</strong> : null}
+              {loadedCount ? (
+                <strong className="count-chip">
+                  {t(pluralKey("upload.count", loadedCount), { count: loadedCount })}
+                </strong>
+              ) : null}
             </div>
 
             <input
@@ -335,12 +413,12 @@ function App() {
               onDrop={handleDrop}
             >
               <span className="upload-glyph" aria-hidden="true" />
-              <strong>{tracks.length ? "Add more audio files" : "Drag and drop audio files"}</strong>
-              <small>MP3, WAV, FLAC, M4A, OGG, AAC supported up to 80 MB each.</small>
+              <strong>{tracks.length ? t("upload.drop.add") : t("upload.drop.initial")}</strong>
+              <small>{t("upload.drop.help")}</small>
             </button>
 
             {tracks.length ? (
-              <div className="track-list" aria-label="Uploaded audio files">
+              <div className="track-list" aria-label={t("upload.trackListAria")}>
                 {tracks.map((track) => {
                   const rowActive = activeTrack?.localId === track.localId;
                   return (
@@ -352,7 +430,7 @@ function App() {
                         className="track-select"
                         type="button"
                         onClick={() => setActiveTrackId(track.localId)}
-                        aria-label={`Select ${track.originalName}`}
+                        aria-label={t("track.selectAria", { name: track.originalName })}
                         aria-pressed={rowActive}
                       >
                         <span className="album-tile" aria-hidden="true">
@@ -362,13 +440,13 @@ function App() {
                       <div className="track-meta">
                         <strong>{track.originalName}</strong>
                         <span>
-                          {formatDuration(track.duration)} | {formatBytes(track.size)} |{" "}
-                          {track.mimeType || "Audio"}
+                          {formatDuration(track.duration, t)} | {formatBytes(track.size)} |{" "}
+                          {track.mimeType || t("track.audioFile")}
                         </span>
-                        {track.error ? <em>{track.error}</em> : null}
+                        {track.error ? <em>{renderMessage(track.error, t)}</em> : null}
                       </div>
                       <div className="track-bpm">
-                        <span>{track.phase === "analyzing" ? "Analyzing" : "Detected"}</span>
+                        <span>{track.phase === "analyzing" ? t("track.analyzing") : t("track.detected")}</span>
                         <strong>{track.detectedBpm ? `${track.detectedBpm} BPM` : "--"}</strong>
                       </div>
                       <button
@@ -378,23 +456,23 @@ function App() {
                         onClick={() => convertTrack(track.localId)}
                       >
                         {track.phase === "converting"
-                          ? "Converting"
-                          : `Convert to ${track.targetBpm || DEFAULT_TARGET_BPM} BPM`}
+                          ? t("track.converting")
+                          : t("track.convert", { bpm: track.targetBpm || DEFAULT_TARGET_BPM })}
                       </button>
                       {track.result ? (
                         <a className="row-download" href={track.result.downloadUrl}>
-                          Download MP3
+                          {t("track.downloadMp3")}
                         </a>
                       ) : (
                         <button className="row-download" type="button" disabled>
-                          Download MP3
+                          {t("track.downloadMp3")}
                         </button>
                       )}
                       <button
                         className="icon-button"
                         type="button"
                         onClick={() => removeTrack(track.localId)}
-                        aria-label={`Remove ${track.originalName}`}
+                        aria-label={t("track.removeAria", { name: track.originalName })}
                       >
                         x
                       </button>
@@ -402,13 +480,13 @@ function App() {
                   );
                 })}
                 <button className="clear-button" type="button" onClick={resetTracks}>
-                  Clear all tracks
+                  {t("track.clearAll")}
                 </button>
               </div>
             ) : (
               <div className="empty-copy">
-                <strong>Start with one track or a batch.</strong>
-                <span>Each audio file gets its own BPM detection, conversion button, preview, and download.</span>
+                <strong>{t("upload.emptyTitle")}</strong>
+                <span>{t("upload.emptyCopy")}</span>
               </div>
             )}
           </section>
@@ -416,29 +494,29 @@ function App() {
           <section className="panel conversion-panel" aria-labelledby="conversion-heading">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Tempo conversion</p>
-                <h2 id="conversion-heading">Set the pace</h2>
+                <p className="eyebrow">{t("conversion.eyebrow")}</p>
+                <h2 id="conversion-heading">{t("conversion.heading")}</h2>
               </div>
               {activeTrack ? <strong className="active-file">{activeTrack.originalName}</strong> : null}
             </div>
 
-            <div className="bpm-readout" aria-label="Detected BPM to target BPM">
+            <div className="bpm-readout" aria-label={t("conversion.readoutAria")}>
               <div>
-                <span>Source BPM</span>
+                <span>{t("conversion.sourceBpm")}</span>
                 <strong>{activeTrack?.sourceBpm || "--"}</strong>
-                <small>{sourceModeLabel(activeTrack?.sourceMode)} correction</small>
+                <small>{t("conversion.correction", { mode: sourceModeLabel(activeTrack?.sourceMode) })}</small>
               </div>
               <div className="arrow" aria-hidden="true" />
               <div>
-                <span>Target BPM</span>
+                <span>{t("conversion.targetBpm")}</span>
                 <strong className="accent">{activeTrack?.targetBpm || "--"}</strong>
-                <small>Default runner target</small>
+                <small>{t("conversion.defaultTarget")}</small>
               </div>
             </div>
 
             <div className="form-grid">
               <label className="field">
-                <span>Source BPM</span>
+                <span>{t("conversion.sourceBpm")}</span>
                 <input
                   type="number"
                   min="40"
@@ -446,13 +524,13 @@ function App() {
                   step="0.1"
                   value={activeTrack?.sourceBpm || ""}
                   onChange={(event) => updateActiveTrack({ sourceBpm: clampBpm(event.target.value) })}
-                  placeholder="Detected BPM"
+                  placeholder={t("conversion.sourcePlaceholder")}
                   disabled={!activeTrack}
                 />
               </label>
 
               <label className="field">
-                <span>Target BPM</span>
+                <span>{t("conversion.targetBpm")}</span>
                 <input
                   type="number"
                   min="40"
@@ -466,7 +544,7 @@ function App() {
             </div>
 
             <fieldset className="preset-row" disabled={!activeTrack}>
-              <legend>Presets</legend>
+              <legend>{t("conversion.presets")}</legend>
               {TARGET_PRESETS.map((preset) => (
                 <button
                   key={preset}
@@ -481,11 +559,11 @@ function App() {
             </fieldset>
 
             <fieldset className="segmented" disabled={!activeTrack}>
-              <legend>Tempo correction</legend>
+              <legend>{t("conversion.tempoCorrection")}</legend>
               {[
-                ["half", "Use 1/2 detected BPM"],
-                ["normal", "Use detected"],
-                ["double", "Use 2x detected BPM"]
+                ["half", t("sourceMode.half")],
+                ["normal", t("sourceMode.normal")],
+                ["double", t("sourceMode.double")]
               ].map(([mode, label]) => (
                 <button
                   key={mode}
@@ -502,8 +580,8 @@ function App() {
             <div className="pitch-note pitch-static">
               <span className="pitch-badge" aria-hidden="true">P</span>
               <div>
-                <strong>Pitch preserved</strong>
-                <span>FFmpeg tempo stretching keeps the original key while changing speed.</span>
+                <strong>{t("pitch.heading")}</strong>
+                <span>{t("pitch.body")}</span>
               </div>
             </div>
           </section>
@@ -512,15 +590,15 @@ function App() {
         <section className="tempo-lane panel" aria-labelledby="lane-heading">
           <div className="lane-heading">
             <div>
-              <p className="eyebrow">Tempo lane</p>
+              <p className="eyebrow">{t("lane.eyebrow")}</p>
               <h2 id="lane-heading">
-                {adjustedSource ? `${adjustedSource.toFixed(1)} BPM` : "Source"} to{" "}
+                {adjustedSource ? `${adjustedSource.toFixed(1)} BPM` : t("lane.source")} {t("lane.to")}{" "}
                 {activeTrack?.targetBpm || DEFAULT_TARGET_BPM} BPM
               </h2>
             </div>
             {tempoDelta ? (
               <div className={largeShift ? "delta warn" : "delta"}>
-                <span>{Number(tempoDelta) >= 0 ? "Faster" : "Slower"}</span>
+                <span>{Number(tempoDelta) >= 0 ? t("lane.faster") : t("lane.slower")}</span>
                 <strong>{Math.abs(Number(tempoDelta)).toFixed(1)}%</strong>
               </div>
             ) : null}
@@ -541,46 +619,48 @@ function App() {
 
           {largeShift ? (
             <p className="warning" role="status">
-              Large tempo shift. The output will still convert, but extreme changes can make music sound less natural.
+              {t("lane.warning")}
             </p>
           ) : (
             <p className="lane-copy">
-              Optimal running playlists often aim near 180 BPM. Select any row to tune source BPM before converting.
+              {t("lane.copy")}
             </p>
           )}
         </section>
 
         <section className="output-bar" aria-labelledby="output-heading">
           <div>
-            <p className="eyebrow">Output preview</p>
+            <p className="eyebrow">{t("output.eyebrow")}</p>
             <h2 id="output-heading">
-              {activeTrack?.result ? "Converted MP3 ready" : "Ready when analysis completes"}
+              {activeTrack?.result ? t("output.converted") : t("output.ready")}
             </h2>
             {activeTrack?.result?.alignment ? (
               <p className="alignment-summary">
-                <strong>Metronome aligned</strong>
+                <strong>{t("output.alignmentTitle")}</strong>
                 <span>
-                  First beat matched to {activeTrack.result.alignment.targetBpm || activeTrack.result.targetBpm} BPM grid
+                  {t("output.alignmentDetail", {
+                    bpm: activeTrack.result.alignment.targetBpm || activeTrack.result.targetBpm
+                  })}
                 </span>
               </p>
             ) : null}
           </div>
           <dl>
             <div>
-              <dt>Format</dt>
+              <dt>{t("output.format")}</dt>
               <dd>MP3</dd>
             </div>
             <div>
-              <dt>New BPM</dt>
+              <dt>{t("output.newBpm")}</dt>
               <dd>{activeTrack?.result?.targetBpm || activeTrack?.targetBpm || DEFAULT_TARGET_BPM}</dd>
             </div>
             <div>
-              <dt>Tempo scale</dt>
+              <dt>{t("output.tempoScale")}</dt>
               <dd>{tempoFactor ? `${tempoFactor.toFixed(3)}x` : "--"}</dd>
             </div>
           </dl>
           <p className="conversion-guidance" aria-live="polite">
-            Conversions usually finish quickly. Larger batches can take a few minutes.
+            {t("output.guidance")}
           </p>
 
           <div className="actions">
@@ -591,35 +671,35 @@ function App() {
               onClick={() => convertTrack(activeTrack.localId)}
             >
               {activeTrack?.phase === "converting"
-                ? "Converting audio"
-                : `Convert selected to ${activeTrack?.targetBpm || DEFAULT_TARGET_BPM} BPM`}
+                ? t("output.convertingAudio")
+                : t("output.convertSelected", { bpm: activeTrack?.targetBpm || DEFAULT_TARGET_BPM })}
             </button>
             {activeTrack?.result ? (
               <a className="secondary-action" href={activeTrack.result.downloadUrl}>
-                Download
+                {t("output.download")}
               </a>
             ) : (
               <button className="secondary-action" type="button" disabled>
-                Download
+                {t("output.download")}
               </button>
             )}
           </div>
         </section>
 
         {activeTrack?.result ? (
-          <section className="preview-panel" aria-label="Converted audio preview">
+          <section className="preview-panel" aria-label={t("output.previewAria")}>
             <audio controls src={activeTrack.result.downloadUrl} />
           </section>
         ) : null}
 
-        {error ? (
+        {errorText ? (
           <div className="error-banner" role="alert">
-            <strong>Needs attention</strong>
-            <span>{error}</span>
+            <strong>{t("error.attention")}</strong>
+            <span>{errorText}</span>
           </div>
         ) : null}
         <p className="retention-footnote">
-          Uploaded and converted files are stored temporarily for processing and automatically removed after about 1 hour.
+          {t("retention.footnote")}
         </p>
       </section>
     </main>

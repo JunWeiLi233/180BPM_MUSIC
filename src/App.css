@@ -37,7 +37,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -96,7 +97,7 @@ input:focus-visible {
 
 .topbar {
   display: grid;
-  grid-template-columns: minmax(280px, 1.4fr) auto auto;
+  grid-template-columns: minmax(280px, 1.4fr) auto auto auto;
   gap: 14px;
   align-items: center;
   padding: 18px 20px;
@@ -212,7 +213,8 @@ h2 {
 
 .target-chip span,
 .target-chip b,
-.process-status span {
+.process-status span,
+.language-picker span {
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 800;
@@ -234,6 +236,29 @@ h2 {
 
 .process-status strong {
   color: var(--lime);
+}
+
+:root[dir="rtl"] .process-status {
+  padding-left: 0;
+  padding-right: 20px;
+  border-left: 0;
+  border-right: 1px solid var(--line);
+}
+
+.language-picker {
+  display: grid;
+  gap: 6px;
+  min-width: 132px;
+}
+
+.language-picker select {
+  height: 38px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0d1214;
+  color: var(--text);
+  font-weight: 800;
 }
 
 .workspace-grid {
@@ -485,6 +510,8 @@ h2 {
   min-height: 44px;
   border-radius: 8px;
   font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
   text-decoration: none;
 }
 
@@ -866,6 +893,8 @@ h2 {
   min-height: 56px;
   border-radius: 8px;
   font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   transition:

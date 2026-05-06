@@ -40,5 +40,6 @@ The included `render.yaml` can be used as a Render Blueprint after the project i
 - File limit: 80 MB.
 - Batch handling: select or drop multiple files; each track gets its own BPM correction, conversion button, preview, and download.
 - Conversion output: MP3 tempo-stretched to the target BPM, then first-beat aligned to the generated target-BPM metronome grid.
+- Languages: English, Spanish, Simplified Chinese, Traditional Chinese, German, Hindi, French, Modern Standard Arabic, Bengali, Portuguese, Russian, and Urdu, selected from the user's browser language by default with an in-app language switcher.
 - Audio is processed by the local Node server using bundled FFmpeg from `ffmpeg-static`.
 - Temporary files are stored under `server/storage`, cleared when the server starts, and removed after about 1 hour while the server is running.

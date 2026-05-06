@@ -42,7 +42,11 @@ async function main() {
     headless: true
   });
 
-  const page = await browser.newPage({ viewport: { width: 1440, height: 980 } });
+  const context = await browser.newContext({
+    locale: "en-US",
+    viewport: { width: 1440, height: 980 }
+  });
+  const page = await context.newPage();
   const consoleErrors = [];
   const pageErrors = [];
 
@@ -75,6 +79,7 @@ async function main() {
 
   await fs.mkdir("docs/superpowers", { recursive: true });
   await page.screenshot({ path: "docs/superpowers/beats-your-music-browser-smoke.png", fullPage: true });
+  await context.close();
   await browser.close();
 
   if (consoleErrors.length || pageErrors.length) {
