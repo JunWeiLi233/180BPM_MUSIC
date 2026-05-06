@@ -21,6 +21,7 @@ import {
   isValidBpm,
   MAX_FILE_BYTES,
   normalizeBpm,
+  normalizeMetronomeVolume,
   OUTPUT_DIR,
   probeDuration,
   readAudioMetadata,
@@ -142,7 +143,14 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
 
 app.post("/api/convert", async (req, res, next) => {
   try {
-    const { fileId, sourceBpm, targetBpm, sourceMode = "normal", mixMetronome = false } = req.body;
+    const {
+      fileId,
+      sourceBpm,
+      targetBpm,
+      sourceMode = "normal",
+      mixMetronome = false,
+      metronomeVolume = "medium"
+    } = req.body;
     const record = files.get(fileId);
 
     if (!record) {
@@ -157,6 +165,7 @@ app.post("/api/convert", async (req, res, next) => {
 
     const adjustedSourceBpm = adjustBpmForMode(sourceBpm, sourceMode);
     const normalizedTargetBpm = normalizeBpm(targetBpm);
+    const normalizedMetronomeVolume = normalizeMetronomeVolume(metronomeVolume);
     const tempoFactor = calculateTempoFactor(adjustedSourceBpm, normalizedTargetBpm);
     const alignment = buildTempoAlignmentPlan({
       sourceBpm: adjustedSourceBpm,
@@ -171,7 +180,8 @@ app.post("/api/convert", async (req, res, next) => {
       targetBpm: normalizedTargetBpm,
       sourceBeats: record.detectedBeats,
       durationSeconds: record.duration,
-      mixMetronome: Boolean(mixMetronome)
+      mixMetronome: Boolean(mixMetronome),
+      metronomeVolume: normalizedMetronomeVolume
     });
     const stats = await fs.stat(outputPath);
 
@@ -181,6 +191,7 @@ app.post("/api/convert", async (req, res, next) => {
     record.tempoFactor = tempoFactor;
     record.alignment = alignment;
     record.metronomeMixed = Boolean(mixMetronome);
+    record.metronomeVolume = normalizedMetronomeVolume;
     record.outputSize = stats.size;
     files.set(fileId, record);
 
@@ -192,6 +203,7 @@ app.post("/api/convert", async (req, res, next) => {
       tempoFactor,
       alignment,
       metronomeMixed: record.metronomeMixed,
+      metronomeVolume: record.metronomeVolume,
       outputSize: stats.size,
       downloadUrl: `/api/download/${fileId}`
     });

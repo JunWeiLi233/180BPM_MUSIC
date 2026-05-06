@@ -17,7 +17,11 @@ export const MAX_FILE_BYTES = 80 * 1024 * 1024;
 const METRONOME_CLICK_SECONDS = 0.03;
 const METRONOME_CLICK_FREQUENCY = 1200;
 const METRONOME_CLICK_AMPLITUDE = 0.55;
-const METRONOME_MIX_WEIGHT = 0.18;
+const METRONOME_MIX_WEIGHTS = {
+  low: 0.1,
+  medium: 0.18,
+  high: 0.3
+};
 const EXPLICIT_BPM_FILE_NAME_PATTERN = /(?:^|[-_\s])(\d{2,3}(?:\.\d{1,2})?)\s*bpm(?:\.[^.]+)?$/i;
 const METADATA_BPM_KEYS = new Set(["bpm", "tbpm"]);
 
@@ -174,6 +178,15 @@ export function buildMetronomeClickSource(targetBpm, durationSeconds) {
   return parts.join(":");
 }
 
+export function normalizeMetronomeVolume(value = "medium") {
+  const volume = String(value || "").toLowerCase();
+  return Object.hasOwn(METRONOME_MIX_WEIGHTS, volume) ? volume : "medium";
+}
+
+export function getMetronomeMixWeight(value = "medium") {
+  return METRONOME_MIX_WEIGHTS[normalizeMetronomeVolume(value)];
+}
+
 function findNearestMetronomeBeat(beatSeconds, metronomeGridSeconds) {
   if (!metronomeGridSeconds.length) return 0;
 
@@ -260,10 +273,12 @@ export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOpt
   args.push("-vn");
 
   if (!isSimpleTempo && tempoFactorOrOptions.mixMetronome) {
+    const metronomeMixWeight = getMetronomeMixWeight(tempoFactorOrOptions.metronomeVolume);
+
     args.push(
       "-filter_complex",
       `[0:a]${filter}[music];` +
-        `[music][1:a]amix=inputs=2:duration=first:weights=1 ${METRONOME_MIX_WEIGHT}:normalize=0,` +
+        `[music][1:a]amix=inputs=2:duration=first:weights=1 ${metronomeMixWeight}:normalize=0,` +
         "alimiter=limit=0.98[out]",
       "-map",
       "[out]"

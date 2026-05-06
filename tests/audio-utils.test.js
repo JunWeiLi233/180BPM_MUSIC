@@ -11,8 +11,10 @@ import {
   chooseDetectedTempo,
   createMusicTempoOptions,
   extractBpmFromFileName,
+  getMetronomeMixWeight,
   chooseAnalysisWindow,
   isValidBpm,
+  normalizeMetronomeVolume,
   normalizeBpm
 } from "../server/audio-utils.js";
 
@@ -156,13 +158,24 @@ describe("audio utilities", () => {
     expect(source).toContain("d=8");
   });
 
+  it("normalizes the three metronome volume ranges", () => {
+    expect(normalizeMetronomeVolume("low")).toBe("low");
+    expect(normalizeMetronomeVolume("medium")).toBe("medium");
+    expect(normalizeMetronomeVolume("high")).toBe("high");
+    expect(normalizeMetronomeVolume("invalid")).toBe("medium");
+    expect(getMetronomeMixWeight("low")).toBe(0.1);
+    expect(getMetronomeMixWeight("medium")).toBe(0.18);
+    expect(getMetronomeMixWeight("high")).toBe(0.3);
+  });
+
   it("adds a lavfi click input and mixes it when metronome output is enabled", () => {
     const args = buildTempoConversionArgs("input.wav", "output.mp3", {
       sourceBpm: 120,
       targetBpm: 180,
       sourceBeats: [0.24, 0.74, 1.24],
       durationSeconds: 8,
-      mixMetronome: true
+      mixMetronome: true,
+      metronomeVolume: "high"
     });
     const joined = args.join(" ");
 
@@ -171,6 +184,7 @@ describe("audio utilities", () => {
     expect(args).toContain("-filter_complex");
     expect(joined).toContain("[0:a]atempo=1.5");
     expect(joined).toContain("amix=inputs=2");
+    expect(joined).toContain("weights=1 0.3");
     expect(joined).toContain("duration=first");
     expect(joined).toContain("-map [out]");
   });

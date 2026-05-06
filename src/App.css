@@ -619,7 +619,8 @@ h2 {
 
 .field span,
 .preset-row legend,
-.segmented legend {
+.segmented legend,
+.metronome-volume legend {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 700;
@@ -638,7 +639,8 @@ h2 {
 }
 
 .preset-row,
-.segmented {
+.segmented,
+.metronome-volume {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -649,13 +651,15 @@ h2 {
 }
 
 .preset-row legend,
-.segmented legend {
+.segmented legend,
+.metronome-volume legend {
   width: 100%;
   margin-bottom: 2px;
 }
 
 .preset-row button,
-.segmented button {
+.segmented button,
+.metronome-volume button {
   min-width: 64px;
   min-height: 44px;
   padding: 0 16px;
@@ -668,10 +672,19 @@ h2 {
 }
 
 .preset-row button.is-selected,
-.segmented button.is-selected {
+.segmented button.is-selected,
+.metronome-volume button.is-selected {
   border-color: rgba(156, 240, 50, 0.78);
   background: var(--lime);
   color: #101609;
+}
+
+.metronome-volume {
+  margin-top: 12px;
+}
+
+.metronome-volume:disabled {
+  opacity: 0.5;
 }
 
 .pitch-note {
