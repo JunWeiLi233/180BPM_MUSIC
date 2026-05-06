@@ -172,12 +172,31 @@ export function buildMetronomeClickSource(targetBpm, durationSeconds, soundType 
   const sound = normalizeMetronomeSound(soundType);
   const intervalSeconds = formatSeconds(60 / target);
   const beatPhase = `mod(t\\,${intervalSeconds})`;
-  const expression =
-    sound === "drum"
-      ? `if(lt(${beatPhase}\\,0.12)\\,` +
-        `0.75*exp(-${beatPhase}*35)*sin(2*PI*(95+140*exp(-${beatPhase}*18))*${beatPhase})\\,0)`
-      : `if(lt(${beatPhase}\\,${formatSeconds(METRONOME_CLICK_SECONDS)})\\,` +
-        `${METRONOME_CLICK_AMPLITUDE}*sin(2*PI*${METRONOME_CLICK_FREQUENCY}*t)\\,0)`;
+  let expression;
+
+  if (sound === "drum") {
+    const barBeat = `mod(floor(t/${intervalSeconds})\\,4)`;
+    const kickAccent = `if(eq(${barBeat}\\,0)+eq(${barBeat}\\,2)\\,1\\,0.42)`;
+    const snareAccent = `if(eq(${barBeat}\\,1)+eq(${barBeat}\\,3)\\,1\\,0.16)`;
+    const kick =
+      `if(lt(${beatPhase}\\,0.16)\\,` +
+      `${kickAccent}*0.9*exp(-${beatPhase}*38)*` +
+      `sin(2*PI*(52+105*exp(-${beatPhase}*18))*${beatPhase})\\,0)`;
+    const snare =
+      `if(lt(${beatPhase}\\,0.11)\\,` +
+      `${snareAccent}*0.24*exp(-${beatPhase}*55)*` +
+      `(sin(2*PI*180*t)+0.45*sin(2*PI*330*t)+0.35*sin(2*PI*2400*t))\\,0)`;
+    const hiHat =
+      `if(lt(${beatPhase}\\,0.045)\\,` +
+      `0.16*exp(-${beatPhase}*95)*(sin(2*PI*6500*t)+0.6*sin(2*PI*9300*t))\\,0)`;
+
+    expression = `${kick}+${snare}+${hiHat}`;
+  } else {
+    expression =
+      `if(lt(${beatPhase}\\,${formatSeconds(METRONOME_CLICK_SECONDS)})\\,` +
+      `${METRONOME_CLICK_AMPLITUDE}*sin(2*PI*${METRONOME_CLICK_FREQUENCY}*t)\\,0)`;
+  }
+
   const parts = [`aevalsrc=exprs=${expression}`, "s=44100"];
   const duration = Number(durationSeconds);
 

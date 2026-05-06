@@ -161,13 +161,16 @@ describe("audio utilities", () => {
     expect(source).toContain("d=8");
   });
 
-  it("builds a drum-like target-BPM click source for a physical metronome", () => {
+  it("builds a drum-set target-BPM click source for a physical metronome", () => {
     const source = buildMetronomeClickSource(180, 8, "drum");
 
     expect(source).toContain("aevalsrc=exprs=");
     expect(source).toContain("mod(t\\,0.333");
+    expect(source).toContain("floor(t/0.333");
     expect(source).toContain("exp(-");
-    expect(source).toContain("95");
+    expect(source).toContain("52");
+    expect(source).toContain("2400");
+    expect(source).toContain("6500");
     expect(source).toContain("s=44100");
     expect(source).toContain("d=8");
   });
