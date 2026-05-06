@@ -730,6 +730,85 @@ h2 {
   font-weight: 900;
 }
 
+.metronome-option {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.metronome-option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.metronome-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.metronome-switch {
+  display: flex;
+  align-items: center;
+  width: 58px;
+  height: 32px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #0b1012;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.metronome-switch b {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.metronome-option input:checked + .metronome-switch {
+  border-color: rgba(156, 240, 50, 0.78);
+  background: var(--lime);
+}
+
+.metronome-option input:checked + .metronome-switch b {
+  background: #101609;
+  transform: translateX(24px);
+}
+
+:root[dir="rtl"] .metronome-option input:checked + .metronome-switch b {
+  transform: translateX(-24px);
+}
+
+.metronome-option input:focus-visible + .metronome-switch {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.metronome-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.metronome-copy small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .tempo-lane {
   margin-top: 12px;
   padding: 22px 24px;
@@ -836,7 +915,8 @@ h2 {
   font-size: 1rem;
 }
 
-.alignment-summary {
+.alignment-summary,
+.metronome-summary {
   display: grid;
   gap: 4px;
   margin: 10px 0 0;
@@ -844,11 +924,13 @@ h2 {
   font-size: 0.86rem;
 }
 
-.alignment-summary strong {
+.alignment-summary strong,
+.metronome-summary strong {
   color: var(--lime);
 }
 
-.alignment-summary span {
+.alignment-summary span,
+.metronome-summary span {
   display: block;
 }
 

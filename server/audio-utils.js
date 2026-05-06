@@ -14,6 +14,10 @@ export const OUTPUT_DIR = path.join(STORAGE_DIR, "output");
 export const MIN_BPM = 40;
 export const MAX_BPM = 260;
 export const MAX_FILE_BYTES = 80 * 1024 * 1024;
+const METRONOME_CLICK_SECONDS = 0.03;
+const METRONOME_CLICK_FREQUENCY = 1200;
+const METRONOME_CLICK_AMPLITUDE = 0.55;
+const METRONOME_MIX_WEIGHT = 0.18;
 
 export function isValidBpm(value) {
   const bpm = Number(value);
@@ -92,6 +96,23 @@ export function buildMetronomeGrid(targetBpm, durationSeconds) {
   return beats;
 }
 
+export function buildMetronomeClickSource(targetBpm, durationSeconds) {
+  const target = normalizeBpm(targetBpm);
+  const intervalSeconds = formatSeconds(60 / target);
+  const clickSeconds = formatSeconds(METRONOME_CLICK_SECONDS);
+  const expression =
+    `if(lt(mod(t\\,${intervalSeconds})\\,${clickSeconds})\\,` +
+    `${METRONOME_CLICK_AMPLITUDE}*sin(2*PI*${METRONOME_CLICK_FREQUENCY}*t)\\,0)`;
+  const parts = [`aevalsrc=exprs=${expression}`, "s=44100"];
+  const duration = Number(durationSeconds);
+
+  if (Number.isFinite(duration) && duration > 0) {
+    parts.push(`d=${formatSeconds(duration)}`);
+  }
+
+  return parts.join(":");
+}
+
 function findNearestMetronomeBeat(beatSeconds, metronomeGridSeconds) {
   if (!metronomeGridSeconds.length) return 0;
 
@@ -145,6 +166,54 @@ export function buildTempoAlignmentFilter(options) {
   }
 
   return filters.join(",");
+}
+
+function getConvertedDurationSeconds(plan) {
+  const duration =
+    plan.stretchedDurationSeconds - plan.trimAfterTempoSeconds + plan.delayBeforeAudioSeconds;
+
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return null;
+  }
+
+  return roundSeconds(duration + 0.25);
+}
+
+export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOptions) {
+  const args = ["-hide_banner", "-loglevel", "error", "-y", "-i", inputPath];
+  const isSimpleTempo = typeof tempoFactorOrOptions === "number";
+  const plan = isSimpleTempo ? null : buildTempoAlignmentPlan(tempoFactorOrOptions);
+  const filter = isSimpleTempo
+    ? buildAtempoChain(tempoFactorOrOptions)
+    : buildTempoAlignmentFilter(tempoFactorOrOptions);
+
+  if (!isSimpleTempo && tempoFactorOrOptions.mixMetronome) {
+    args.push(
+      "-f",
+      "lavfi",
+      "-i",
+      buildMetronomeClickSource(plan.targetBpm, getConvertedDurationSeconds(plan))
+    );
+  }
+
+  args.push("-vn");
+
+  if (!isSimpleTempo && tempoFactorOrOptions.mixMetronome) {
+    args.push(
+      "-filter_complex",
+      `[0:a]${filter}[music];` +
+        `[music][1:a]amix=inputs=2:duration=first:weights=1 ${METRONOME_MIX_WEIGHT}:normalize=0,` +
+        "alimiter=limit=0.98[out]",
+      "-map",
+      "[out]"
+    );
+  } else {
+    args.push("-filter:a", filter);
+  }
+
+  args.push("-codec:a", "libmp3lame", "-q:a", "2", outputPath);
+
+  return args;
 }
 
 export function getSafeExtension(fileName = "", fallback = ".bin") {
@@ -288,27 +357,7 @@ export async function probeDuration(filePath) {
 }
 
 export async function convertTempo(inputPath, outputPath, tempoFactorOrOptions) {
-  const filter =
-    typeof tempoFactorOrOptions === "number"
-      ? buildAtempoChain(tempoFactorOrOptions)
-      : buildTempoAlignmentFilter(tempoFactorOrOptions);
-
-  await runFfmpeg([
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-y",
-    "-i",
-    inputPath,
-    "-vn",
-    "-filter:a",
-    filter,
-    "-codec:a",
-    "libmp3lame",
-    "-q:a",
-    "2",
-    outputPath
-  ]);
+  await runFfmpeg(buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOptions));
 }
 
 export async function removeFileIfExists(filePath) {

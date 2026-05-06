@@ -1,6 +1,6 @@
 # Beats Your Music
 
-Localhost website for converting one or more uploaded music files to a target BPM. The default target is 180 BPM for runner-friendly playlists.
+Website for converting one or more uploaded music files to a target BPM. The default target is 180 BPM for runner-friendly playlists.
 
 ## Run
 
@@ -39,7 +39,7 @@ The included `render.yaml` can be used as a Render Blueprint after the project i
 - Supported input: common audio files such as MP3, WAV, M4A, AAC, OGG, FLAC, AIFF, and AIF.
 - File limit: 80 MB.
 - Batch handling: select or drop multiple files; each track gets its own BPM correction, conversion button, preview, and download.
-- Conversion output: MP3 tempo-stretched to the target BPM, then first-beat aligned to the generated target-BPM metronome grid.
+- Conversion output: MP3 tempo-stretched to the target BPM, first-beat aligned to the generated target-BPM metronome grid, with an optional quiet metronome click mixed into the converted background.
 - Languages: English, Spanish, Simplified Chinese, Traditional Chinese, German, Hindi, French, Modern Standard Arabic, Bengali, Portuguese, Russian, and Urdu, selected from the user's browser language by default with an in-app language switcher.
 - Audio is processed by the local Node server using bundled FFmpeg from `ffmpeg-static`.
 - Temporary files are stored under `server/storage`, cleared when the server starts, and removed after about 1 hour while the server is running.

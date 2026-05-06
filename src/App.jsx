@@ -72,6 +72,7 @@ function withTrackDefaults(track) {
     sourceBpm: track.detectedBpm || "",
     targetBpm: track.targetBpm || DEFAULT_TARGET_BPM,
     sourceMode: "normal",
+    mixMetronome: Boolean(track.mixMetronome),
     phase: track.phase || "ready",
     result: null,
     error: null
@@ -232,6 +233,7 @@ function App() {
       sourceBpm: "",
       targetBpm: DEFAULT_TARGET_BPM,
       sourceMode: "normal",
+      mixMetronome: false,
       phase: "analyzing",
       result: null,
       error: null
@@ -279,7 +281,8 @@ function App() {
           fileId: track.fileId,
           sourceBpm: track.sourceBpm,
           targetBpm: track.targetBpm,
-          sourceMode: track.sourceMode
+          sourceMode: track.sourceMode,
+          mixMetronome: Boolean(track.mixMetronome)
         })
       });
       const payload = await response.json();
@@ -584,6 +587,22 @@ function App() {
                 <span>{t("pitch.body")}</span>
               </div>
             </div>
+
+            <label className={`metronome-option ${activeTrack?.mixMetronome ? "is-enabled" : ""}`}>
+              <input
+                type="checkbox"
+                checked={Boolean(activeTrack?.mixMetronome)}
+                disabled={!activeTrack}
+                onChange={(event) => updateActiveTrack({ mixMetronome: event.target.checked })}
+              />
+              <span className="metronome-switch" aria-hidden="true">
+                <b />
+              </span>
+              <span className="metronome-copy">
+                <strong>{t("conversion.metronomeToggle")}</strong>
+                <small>{t("conversion.metronomeHint")}</small>
+              </span>
+            </label>
           </section>
         </div>
 
@@ -642,6 +661,12 @@ function App() {
                     bpm: activeTrack.result.alignment.targetBpm || activeTrack.result.targetBpm
                   })}
                 </span>
+              </p>
+            ) : null}
+            {activeTrack?.result?.metronomeMixed ? (
+              <p className="metronome-summary">
+                <strong>{t("output.metronomeMixed")}</strong>
+                <span>{t("output.metronomeMixedDetail")}</span>
               </p>
             ) : null}
           </div>

@@ -54,11 +54,13 @@ describe("audio conversion API", () => {
         fileId: analyze.body.fileId,
         sourceBpm: 120,
         targetBpm: 180,
-        sourceMode: "normal"
+        sourceMode: "normal",
+        mixMetronome: true
       })
       .expect(200);
 
     expect(convert.body.tempoFactor).toBe(1.5);
+    expect(convert.body.metronomeMixed).toBe(true);
     expect(convert.body.alignment.tempoFactor).toBe(1.5);
     expect(convert.body.alignment.targetBpm).toBe(180);
     expect(convert.body.alignment.metronomeGridSeconds.length).toBeGreaterThan(5);

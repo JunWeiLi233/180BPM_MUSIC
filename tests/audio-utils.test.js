@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   adjustBpmForMode,
   buildAtempoChain,
+  buildMetronomeClickSource,
   buildMetronomeGrid,
+  buildTempoConversionArgs,
   buildTempoAlignmentPlan,
   buildTempoAlignmentFilter,
   calculateTempoFactor,
@@ -86,5 +88,47 @@ describe("audio utilities", () => {
     });
 
     expect(filter).toBe("atempo=1.5,atrim=start=0.16,asetpts=PTS-STARTPTS");
+  });
+
+  it("builds a target-BPM click source for a background metronome", () => {
+    const source = buildMetronomeClickSource(180, 8);
+
+    expect(source).toContain("aevalsrc=exprs=");
+    expect(source).toContain("mod(t\\,0.333");
+    expect(source).toContain("s=44100");
+    expect(source).toContain("d=8");
+  });
+
+  it("adds a lavfi click input and mixes it when metronome output is enabled", () => {
+    const args = buildTempoConversionArgs("input.wav", "output.mp3", {
+      sourceBpm: 120,
+      targetBpm: 180,
+      sourceBeats: [0.24, 0.74, 1.24],
+      durationSeconds: 8,
+      mixMetronome: true
+    });
+    const joined = args.join(" ");
+
+    expect(args).toContain("-f");
+    expect(args).toContain("lavfi");
+    expect(args).toContain("-filter_complex");
+    expect(joined).toContain("[0:a]atempo=1.5");
+    expect(joined).toContain("amix=inputs=2");
+    expect(joined).toContain("duration=first");
+    expect(joined).toContain("-map [out]");
+  });
+
+  it("keeps the simple audio filter path when metronome output is disabled", () => {
+    const args = buildTempoConversionArgs("input.wav", "output.mp3", {
+      sourceBpm: 120,
+      targetBpm: 180,
+      sourceBeats: [0.24, 0.74, 1.24],
+      durationSeconds: 8,
+      mixMetronome: false
+    });
+
+    expect(args).toContain("-filter:a");
+    expect(args).not.toContain("-filter_complex");
+    expect(args).not.toContain("lavfi");
   });
 });

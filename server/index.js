@@ -131,7 +131,7 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
 
 app.post("/api/convert", async (req, res, next) => {
   try {
-    const { fileId, sourceBpm, targetBpm, sourceMode = "normal" } = req.body;
+    const { fileId, sourceBpm, targetBpm, sourceMode = "normal", mixMetronome = false } = req.body;
     const record = files.get(fileId);
 
     if (!record) {
@@ -159,7 +159,8 @@ app.post("/api/convert", async (req, res, next) => {
       sourceBpm: adjustedSourceBpm,
       targetBpm: normalizedTargetBpm,
       sourceBeats: record.detectedBeats,
-      durationSeconds: record.duration
+      durationSeconds: record.duration,
+      mixMetronome: Boolean(mixMetronome)
     });
     const stats = await fs.stat(outputPath);
 
@@ -168,6 +169,7 @@ app.post("/api/convert", async (req, res, next) => {
     record.adjustedSourceBpm = adjustedSourceBpm;
     record.tempoFactor = tempoFactor;
     record.alignment = alignment;
+    record.metronomeMixed = Boolean(mixMetronome);
     record.outputSize = stats.size;
     files.set(fileId, record);
 
@@ -178,6 +180,7 @@ app.post("/api/convert", async (req, res, next) => {
       targetBpm: normalizedTargetBpm,
       tempoFactor,
       alignment,
+      metronomeMixed: record.metronomeMixed,
       outputSize: stats.size,
       downloadUrl: `/api/download/${fileId}`
     });
