@@ -98,6 +98,35 @@ function createMessage(key, values = {}) {
   return { key, values };
 }
 
+function isTrackCountStatus(message, baseKey) {
+  return message?.key === `${baseKey}_one` || message?.key === `${baseKey}_other`;
+}
+
+function statusAfterTrackRemoval(remainingTracks, currentStatus) {
+  if (!remainingTracks.length) {
+    return createMessage("status.ready");
+  }
+
+  if (isTrackCountStatus(currentStatus, "status.analyzing")) {
+    const analyzingCount = remainingTracks.filter((track) => track.phase === "analyzing").length;
+    return analyzingCount
+      ? createMessage(pluralKey("status.analyzing", analyzingCount), { count: analyzingCount })
+      : createMessage("status.ready");
+  }
+
+  if (isTrackCountStatus(currentStatus, "status.tracksReady")) {
+    const readyCount = remainingTracks.filter((track) => canConvertTrack(track)).length;
+    if (readyCount) {
+      return createMessage(pluralKey("status.tracksReady", readyCount), { count: readyCount });
+    }
+    return remainingTracks.some((track) => track.phase === "error")
+      ? createMessage("status.analyzeFailed")
+      : createMessage("status.ready");
+  }
+
+  return currentStatus;
+}
+
 function createErrorMessage(message, fallbackKey) {
   const key = SERVER_ERROR_KEYS[message] || fallbackKey;
   return key ? createMessage(key) : { fallback: message };
@@ -313,12 +342,18 @@ function App() {
   }
 
   function removeTrack(localId) {
-    setTracks((currentTracks) => currentTracks.filter((track) => track.localId !== localId));
+    const remaining = tracks.filter((track) => track.localId !== localId);
+    if (remaining.length === tracks.length) return;
+
+    setTracks(remaining);
     setActiveTrackId((currentId) => {
       if (currentId !== localId) return currentId;
-      const remaining = tracks.filter((track) => track.localId !== localId);
       return remaining[0]?.localId || null;
     });
+    setStatus((currentStatus) => statusAfterTrackRemoval(remaining, currentStatus));
+    if (!remaining.length) {
+      setError(null);
+    }
   }
 
   function resetTracks() {

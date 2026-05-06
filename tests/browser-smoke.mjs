@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 import { runFfmpeg } from "../server/audio-utils.js";
+import { createTranslator } from "../src/i18n.js";
 
 const chromePath = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 
@@ -35,6 +36,7 @@ async function createClickTrack(filePath) {
 async function main() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-browser-"));
   const audioPath = path.join(tempDir, "runner-click.wav");
+  const zh = createTranslator("zh");
   await createClickTrack(audioPath);
 
   const browser = await chromium.launch({
@@ -63,6 +65,22 @@ async function main() {
   if (await page.getByText("Processed on this localhost server").count()) {
     throw new Error("Hosted UI still shows localhost processing copy.");
   }
+
+  await page.getByLabel("Language").selectOption("zh");
+  await page.getByRole("heading", { name: zh("upload.heading") }).waitFor();
+  await page.locator('input[type="file"]').setInputFiles(audioPath);
+  await page.getByText(zh("status.tracksReady_one", { count: 1 }), { exact: true }).waitFor({ timeout: 20000 });
+  await page
+    .getByRole("button", { name: zh("track.removeAria", { name: "runner-click.wav" }) })
+    .click();
+  await page.getByText(zh("upload.emptyTitle")).waitFor();
+  await page.getByText(zh("status.ready"), { exact: true }).waitFor({ timeout: 5000 });
+  await page
+    .getByText(zh("status.tracksReady_one", { count: 1 }), { exact: true })
+    .waitFor({ state: "hidden", timeout: 5000 });
+
+  await page.getByLabel(zh("language.label")).selectOption("en");
+  await page.getByRole("heading", { name: "Upload tracks" }).waitFor();
 
   await page.locator('input[type="file"]').setInputFiles(audioPath);
   await page.getByText("Ready to convert").waitFor({ timeout: 20000 });
