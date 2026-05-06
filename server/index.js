@@ -9,6 +9,7 @@ import {
   buildTempoAlignmentPlan,
   calculateTempoFactor,
   chooseAnalysisWindow,
+  chooseDetectedTempo,
   clearStorage,
   convertTempo,
   createOutputFilePath,
@@ -21,6 +22,7 @@ import {
   normalizeBpm,
   OUTPUT_DIR,
   probeDuration,
+  readAudioMetadata,
   removeFileIfExists,
   removeStoredPair
 } from "./audio-utils.js";
@@ -93,11 +95,17 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
     const fileId = path.parse(req.file.filename).name;
     const filePath = req.file.path;
     const duration = await probeDuration(filePath);
+    const metadata = await readAudioMetadata(filePath);
     const analysisWindow = chooseAnalysisWindow(duration);
     const samples = await decodeToMonoPcm(filePath, analysisWindow);
     const mt = new MusicTempo(Array.from(samples));
-    const detectedBpm = normalizeBpm(mt.tempo);
-    const detectedBeats = Array.isArray(mt.beats) ? mt.beats : [];
+    const tempoResult = chooseDetectedTempo({
+      originalName: req.file.originalname,
+      metadata,
+      musicTempoBpm: mt.tempo,
+      musicTempoBeats: mt.beats,
+      durationSeconds: duration
+    });
 
     const record = {
       fileId,
@@ -105,8 +113,9 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
       size: req.file.size,
-      detectedBpm,
-      detectedBeats,
+      detectedBpm: tempoResult.detectedBpm,
+      detectedBeats: tempoResult.detectedBeats,
+      detectionSource: tempoResult.detectionSource,
       duration,
       createdAt: Date.now()
     };
@@ -117,7 +126,8 @@ app.post("/api/analyze", upload.single("track"), async (req, res, next) => {
       originalName: record.originalName,
       mimeType: record.mimeType,
       size: record.size,
-      detectedBpm,
+      detectedBpm: record.detectedBpm,
+      detectionSource: record.detectionSource,
       duration,
       targetBpm: 180
     });

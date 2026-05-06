@@ -8,6 +8,8 @@ import {
   buildTempoAlignmentPlan,
   buildTempoAlignmentFilter,
   calculateTempoFactor,
+  chooseDetectedTempo,
+  extractBpmFromFileName,
   chooseAnalysisWindow,
   isValidBpm,
   normalizeBpm
@@ -59,6 +61,53 @@ describe("audio utilities", () => {
   it("sets up a target metronome grid for the requested BPM", () => {
     expect(buildMetronomeGrid(180, 1.1)).toEqual([0, 0.333, 0.667, 1]);
     expect(buildMetronomeGrid(120, 2.1)).toEqual([0, 0.5, 1, 1.5, 2]);
+  });
+
+  it("extracts BPM from app-converted download file names", () => {
+    expect(extractBpmFromFileName("my-track-180bpm.mp3")).toBe(180);
+    expect(extractBpmFromFileName("long run mix_172.5 BPM.wav")).toBe(172.5);
+    expect(extractBpmFromFileName("plain-track.mp3")).toBeNull();
+    expect(extractBpmFromFileName("bad-320bpm.mp3")).toBeNull();
+  });
+
+  it("uses explicit converted-file BPM instead of a wrong detector harmonic", () => {
+    const result = chooseDetectedTempo({
+      originalName: "song-180bpm.mp3",
+      musicTempoBpm: 103.8,
+      musicTempoBeats: [0.44, 1.02, 1.6],
+      durationSeconds: 1.1
+    });
+
+    expect(result.detectedBpm).toBe(180);
+    expect(result.detectionSource).toBe("filename");
+    expect(result.detectedBeats).toEqual([0, 0.333, 0.667, 1]);
+  });
+
+  it("uses explicit BPM metadata before analyzing the audio content", () => {
+    const result = chooseDetectedTempo({
+      originalName: "renamed.mp3",
+      metadata: { TBPM: "180" },
+      musicTempoBpm: 103.8,
+      musicTempoBeats: [0.44, 1.02, 1.6],
+      durationSeconds: 1.1
+    });
+
+    expect(result.detectedBpm).toBe(180);
+    expect(result.detectionSource).toBe("metadata");
+    expect(result.detectedBeats).toEqual([0, 0.333, 0.667, 1]);
+  });
+
+  it("falls back to the analyzed tempo when the file has no explicit BPM", () => {
+    const result = chooseDetectedTempo({
+      originalName: "song.mp3",
+      musicTempoBpm: 103.83,
+      musicTempoBeats: [0.44, 1.02],
+      durationSeconds: 4
+    });
+
+    expect(result.detectedBpm).toBe(103.8);
+    expect(result.detectionSource).toBe("analysis");
+    expect(result.detectedBeats).toEqual([0.44, 1.02]);
   });
 
   it("plans tempo stretch and first-beat alignment to the metronome", () => {
@@ -130,5 +179,18 @@ describe("audio utilities", () => {
     expect(args).toContain("-filter:a");
     expect(args).not.toContain("-filter_complex");
     expect(args).not.toContain("lavfi");
+  });
+
+  it("writes target BPM metadata to converted MP3 output", () => {
+    const args = buildTempoConversionArgs("input.wav", "output.mp3", {
+      sourceBpm: 120,
+      targetBpm: 180,
+      sourceBeats: [0.24, 0.74, 1.24],
+      durationSeconds: 8
+    });
+
+    expect(args).toContain("-metadata");
+    expect(args).toContain("TBPM=180");
+    expect(args).toContain("BPM=180");
   });
 });

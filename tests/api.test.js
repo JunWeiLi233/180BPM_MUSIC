@@ -33,6 +33,20 @@ async function createClickTrack(filePath) {
 }
 
 describe("audio conversion API", () => {
+  it("uses the BPM suffix when an app-converted MP3 is uploaded again", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-your-music-reupload-"));
+    const inputPath = path.join(tempDir, "runner-180bpm.mp3");
+    await createClickTrack(inputPath);
+
+    const analyze = await request(app)
+      .post("/api/analyze")
+      .attach("track", inputPath)
+      .expect(200);
+
+    expect(analyze.body.detectedBpm).toBe(180);
+    expect(analyze.body.detectionSource).toBe("filename");
+  }, 30000);
+
   it("analyzes and converts a generated click track", async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "beats-your-music-"));
     const inputPath = path.join(tempDir, "click.wav");

@@ -18,6 +18,8 @@ const METRONOME_CLICK_SECONDS = 0.03;
 const METRONOME_CLICK_FREQUENCY = 1200;
 const METRONOME_CLICK_AMPLITUDE = 0.55;
 const METRONOME_MIX_WEIGHT = 0.18;
+const EXPLICIT_BPM_FILE_NAME_PATTERN = /(?:^|[-_\s])(\d{2,3}(?:\.\d{1,2})?)\s*bpm(?:\.[^.]+)?$/i;
+const METADATA_BPM_KEYS = new Set(["bpm", "tbpm"]);
 
 export function isValidBpm(value) {
   const bpm = Number(value);
@@ -94,6 +96,58 @@ export function buildMetronomeGrid(targetBpm, durationSeconds) {
   }
 
   return beats;
+}
+
+export function extractBpmFromFileName(fileName = "") {
+  const baseName = path.basename(String(fileName));
+  const match = baseName.match(EXPLICIT_BPM_FILE_NAME_PATTERN);
+  if (!match) return null;
+
+  try {
+    return normalizeBpm(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+export function extractBpmFromMetadata(metadata = {}) {
+  for (const [key, value] of Object.entries(metadata || {})) {
+    if (!METADATA_BPM_KEYS.has(String(key).toLowerCase())) continue;
+
+    try {
+      return normalizeBpm(value);
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+export function chooseDetectedTempo({
+  originalName = "",
+  metadata = {},
+  musicTempoBpm,
+  musicTempoBeats = [],
+  durationSeconds = 0
+}) {
+  const metadataBpm = extractBpmFromMetadata(metadata);
+  const fileNameBpm = extractBpmFromFileName(originalName);
+  const explicitBpm = metadataBpm || fileNameBpm;
+
+  if (explicitBpm) {
+    return {
+      detectedBpm: explicitBpm,
+      detectedBeats: buildMetronomeGrid(explicitBpm, durationSeconds),
+      detectionSource: metadataBpm ? "metadata" : "filename"
+    };
+  }
+
+  return {
+    detectedBpm: normalizeBpm(musicTempoBpm),
+    detectedBeats: Array.isArray(musicTempoBeats) ? musicTempoBeats : [],
+    detectionSource: "analysis"
+  };
 }
 
 export function buildMetronomeClickSource(targetBpm, durationSeconds) {
@@ -211,7 +265,13 @@ export function buildTempoConversionArgs(inputPath, outputPath, tempoFactorOrOpt
     args.push("-filter:a", filter);
   }
 
-  args.push("-codec:a", "libmp3lame", "-q:a", "2", outputPath);
+  args.push("-codec:a", "libmp3lame", "-q:a", "2");
+
+  if (!isSimpleTempo) {
+    args.push("-metadata", `TBPM=${plan.targetBpm}`, "-metadata", `BPM=${plan.targetBpm}`);
+  }
+
+  args.push(outputPath);
 
   return args;
 }
@@ -289,6 +349,42 @@ export function readFfmpegStdout(args) {
       reject(new Error(stderr.join("").trim() || `FFmpeg exited with code ${code}.`));
     });
   });
+}
+
+export function parseFfmpegMetadata(text = "") {
+  return String(text)
+    .split(/\r?\n/)
+    .filter((line) => line && !line.startsWith(";"))
+    .reduce((metadata, line) => {
+      const separatorIndex = line.indexOf("=");
+      if (separatorIndex <= 0) return metadata;
+
+      const key = line.slice(0, separatorIndex).trim();
+      const value = line.slice(separatorIndex + 1).trim();
+      if (key) {
+        metadata[key] = value;
+      }
+      return metadata;
+    }, {});
+}
+
+export async function readAudioMetadata(filePath) {
+  try {
+    const output = await readFfmpegStdout([
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      filePath,
+      "-f",
+      "ffmetadata",
+      "pipe:1"
+    ]);
+
+    return parseFfmpegMetadata(output.toString());
+  } catch {
+    return {};
+  }
 }
 
 export async function decodeToMonoPcm(filePath, options = {}) {
