@@ -5,6 +5,7 @@ import {
   getInitialLanguage,
   getLanguageDirection
 } from "./i18n.js";
+import { getSeoPage } from "./seo.js";
 
 const DEFAULT_TARGET_BPM = 180;
 const TARGET_PRESETS = [160, 170, 180, 190];
@@ -192,6 +193,7 @@ function App() {
     if (!tempoFactor) return null;
     return ((tempoFactor - 1) * 100).toFixed(1);
   }, [tempoFactor]);
+  const seoKeywords = useMemo(() => getSeoPage(language).keywords, [language]);
 
   const largeShift = tempoFactor && (tempoFactor < 0.75 || tempoFactor > 1.35);
   const loadedCount = tracks.filter((track) => track.fileId).length;
@@ -819,6 +821,25 @@ function App() {
             <span>{errorText}</span>
           </div>
         ) : null}
+
+        <section className="seo-summary" aria-labelledby="seo-heading">
+          <div className="seo-copy">
+            <p className="eyebrow">{t("seo.eyebrow")}</p>
+            <h2 id="seo-heading">{t("seo.heading")}</h2>
+            <p>{t("seo.body")}</p>
+          </div>
+          <ul className="seo-points">
+            <li>{t("seo.point.batch")}</li>
+            <li>{t("seo.point.running")}</li>
+            <li>{t("seo.point.metronome")}</li>
+          </ul>
+          <div className="seo-tags" aria-label={t("seo.keywordsLabel")}>
+            {seoKeywords.map((keyword) => (
+              <span key={keyword}>{keyword}</span>
+            ))}
+          </div>
+        </section>
+
         <p className="retention-footnote">
           {t("retention.footnote")}
         </p>

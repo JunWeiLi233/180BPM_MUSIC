@@ -29,6 +29,27 @@ const LANGUAGE_ALIASES = {
   "zh-mo": "zh-Hant"
 };
 
+export const LANGUAGE_ROUTE_SEGMENTS = {
+  en: "",
+  es: "es",
+  zh: "zh",
+  "zh-Hant": "zh-hant",
+  de: "de",
+  hi: "hi",
+  fr: "fr",
+  ar: "ar",
+  bn: "bn",
+  pt: "pt",
+  ru: "ru",
+  ur: "ur"
+};
+
+const ROUTE_SEGMENT_TO_LANGUAGE = Object.fromEntries(
+  Object.entries(LANGUAGE_ROUTE_SEGMENTS)
+    .filter(([, segment]) => segment)
+    .map(([language, segment]) => [segment, language])
+);
+
 export const translations = {
   en: {
     "language.label": "Language",
@@ -122,7 +143,14 @@ export const translations = {
     "error.chooseAudio": "Choose an audio file to analyze.",
     "error.supportedAudio": "Upload a supported audio file.",
     "error.fileTooLarge": "Audio files must be 80 MB or smaller.",
-    "retention.footnote": "Uploaded and converted files are stored temporarily for processing and automatically removed after about 1 hour."
+    "retention.footnote": "Uploaded and converted files are stored temporarily for processing and automatically removed after about 1 hour.",
+    "seo.eyebrow": "BPM converter",
+    "seo.heading": "Free online BPM converter for running music",
+    "seo.body": "Use Beats Your Music to analyze song tempo, convert audio to 180 BPM or another target BPM, and download pitch-preserved MP3 files for running, workouts, practice, and playlists.",
+    "seo.point.batch": "Batch convert multiple MP3, WAV, FLAC, M4A, OGG, or AAC tracks in one session.",
+    "seo.point.running": "Tune songs for a 180 BPM running cadence or any custom tempo from 40 to 260 BPM.",
+    "seo.point.metronome": "Add an optional electronic pulse or drum-set metronome behind the converted music.",
+    "seo.keywordsLabel": "BPM search phrases"
   },
   es: {
     "language.label": "Idioma",
@@ -216,7 +244,14 @@ export const translations = {
     "error.chooseAudio": "Elige un archivo de audio para analizar.",
     "error.supportedAudio": "Sube un archivo de audio compatible.",
     "error.fileTooLarge": "Los archivos de audio deben pesar 80 MB o menos.",
-    "retention.footnote": "Los archivos subidos y convertidos se almacenan temporalmente para procesarse y se eliminan automáticamente después de aproximadamente 1 hora."
+    "retention.footnote": "Los archivos subidos y convertidos se almacenan temporalmente para procesarse y se eliminan automáticamente después de aproximadamente 1 hora.",
+    "seo.eyebrow": "Conversor de BPM",
+    "seo.heading": "Conversor de BPM online gratis para música de running",
+    "seo.body": "Usa Beats Your Music para analizar el tempo de una canción, convertir audio a 180 BPM u otro BPM objetivo y descargar archivos MP3 con el tono conservado para correr, entrenar, practicar y crear listas.",
+    "seo.point.batch": "Convierte por lotes varias pistas MP3, WAV, FLAC, M4A, OGG o AAC en una sesión.",
+    "seo.point.running": "Ajusta canciones para una cadencia de carrera de 180 BPM o cualquier tempo personalizado de 40 a 260 BPM.",
+    "seo.point.metronome": "Añade un pulso electrónico opcional o un metrónomo de batería detrás de la música convertida.",
+    "seo.keywordsLabel": "Frases de búsqueda de BPM"
   },
   zh: {
     "language.label": "语言",
@@ -310,7 +345,14 @@ export const translations = {
     "error.chooseAudio": "请选择要分析的音频文件。",
     "error.supportedAudio": "请上传受支持的音频文件。",
     "error.fileTooLarge": "音频文件必须不超过 80 MB。",
-    "retention.footnote": "上传和转换后的文件会临时保存用于处理，并在约 1 小时后自动删除。"
+    "retention.footnote": "上传和转换后的文件会临时保存用于处理，并在约 1 小时后自动删除。",
+    "seo.eyebrow": "BPM 转换器",
+    "seo.heading": "适合跑步音乐的免费在线 BPM 转换器",
+    "seo.body": "使用 Beats Your Music 分析歌曲速度，将音频转换为 180 BPM 或其他目标 BPM，并下载保留音高的 MP3 文件，适用于跑步、训练、练习和歌单。",
+    "seo.point.batch": "在一次会话中批量转换多个 MP3、WAV、FLAC、M4A、OGG 或 AAC 音轨。",
+    "seo.point.running": "将歌曲调整为 180 BPM 跑步步频，或 40 到 260 BPM 之间的任意自定义速度。",
+    "seo.point.metronome": "可在转换后的音乐背景中加入电子脉冲或鼓组节拍器。",
+    "seo.keywordsLabel": "BPM 搜索词"
   },
   de: {
     "language.label": "Sprache",
@@ -404,7 +446,14 @@ export const translations = {
     "error.chooseAudio": "Wähle eine Audiodatei zur Analyse aus.",
     "error.supportedAudio": "Lade eine unterstützte Audiodatei hoch.",
     "error.fileTooLarge": "Audiodateien dürfen höchstens 80 MB groß sein.",
-    "retention.footnote": "Hochgeladene und umgewandelte Dateien werden vorübergehend zur Verarbeitung gespeichert und nach etwa 1 Stunde automatisch entfernt."
+    "retention.footnote": "Hochgeladene und umgewandelte Dateien werden vorübergehend zur Verarbeitung gespeichert und nach etwa 1 Stunde automatisch entfernt.",
+    "seo.eyebrow": "BPM-Konverter",
+    "seo.heading": "Kostenloser Online-BPM-Konverter für Laufmusik",
+    "seo.body": "Nutze Beats Your Music, um das Tempo von Songs zu analysieren, Audio auf 180 BPM oder ein anderes Zieltempo zu konvertieren und tonhöhenstabile MP3-Dateien für Läufe, Workouts, Übungen und Playlists herunterzuladen.",
+    "seo.point.batch": "Konvertiere mehrere MP3-, WAV-, FLAC-, M4A-, OGG- oder AAC-Titel in einer Sitzung.",
+    "seo.point.running": "Passe Songs an eine Laufkadenz von 180 BPM oder ein eigenes Tempo von 40 bis 260 BPM an.",
+    "seo.point.metronome": "Mische optional einen elektronischen Puls oder ein Drumset-Metronom hinter die konvertierte Musik.",
+    "seo.keywordsLabel": "BPM-Suchbegriffe"
   },
   "zh-Hant": {
     "language.label": "語言",
@@ -498,7 +547,14 @@ export const translations = {
     "error.chooseAudio": "請選擇要分析的音訊檔案。",
     "error.supportedAudio": "請上傳受支援的音訊檔案。",
     "error.fileTooLarge": "音訊檔案必須不超過 80 MB。",
-    "retention.footnote": "上傳和轉換後的檔案會暫時保存用於處理，並在約 1 小時後自動刪除。"
+    "retention.footnote": "上傳和轉換後的檔案會暫時保存用於處理，並在約 1 小時後自動刪除。",
+    "seo.eyebrow": "BPM 轉換器",
+    "seo.heading": "適合跑步音樂的免費線上 BPM 轉換器",
+    "seo.body": "使用 Beats Your Music 分析歌曲速度，將音訊轉換為 180 BPM 或其他目標 BPM，並下載保留音高的 MP3 檔案，適用於跑步、訓練、練習和歌單。",
+    "seo.point.batch": "在一次工作階段中批次轉換多個 MP3、WAV、FLAC、M4A、OGG 或 AAC 音軌。",
+    "seo.point.running": "將歌曲調整為 180 BPM 跑步步頻，或 40 到 260 BPM 之間的任意自訂速度。",
+    "seo.point.metronome": "可在轉換後的音樂背景中加入電子脈衝或鼓組節拍器。",
+    "seo.keywordsLabel": "BPM 搜尋詞"
   },
   hi: {
     "language.label": "भाषा",
@@ -592,7 +648,14 @@ export const translations = {
     "error.chooseAudio": "विश्लेषण के लिए एक ऑडियो फ़ाइल चुनें।",
     "error.supportedAudio": "समर्थित ऑडियो फ़ाइल अपलोड करें।",
     "error.fileTooLarge": "ऑडियो फ़ाइलें 80 MB या कम होनी चाहिए।",
-    "retention.footnote": "अपलोड और कन्वर्ट की गई फ़ाइलें प्रसंस्करण के लिए अस्थायी रूप से संग्रहीत होती हैं और लगभग 1 घंटे बाद अपने आप हट जाती हैं।"
+    "retention.footnote": "अपलोड और कन्वर्ट की गई फ़ाइलें प्रसंस्करण के लिए अस्थायी रूप से संग्रहीत होती हैं और लगभग 1 घंटे बाद अपने आप हट जाती हैं।",
+    "seo.eyebrow": "BPM कन्वर्टर",
+    "seo.heading": "दौड़ने वाले संगीत के लिए मुफ़्त ऑनलाइन BPM कन्वर्टर",
+    "seo.body": "Beats Your Music से गाने का टेम्पो विश्लेषित करें, ऑडियो को 180 BPM या किसी दूसरे लक्ष्य BPM में बदलें, और दौड़, वर्कआउट, अभ्यास और प्लेलिस्ट के लिए मूल पिच वाले MP3 डाउनलोड करें।",
+    "seo.point.batch": "एक ही सत्र में कई MP3, WAV, FLAC, M4A, OGG या AAC ट्रैक बैच में कन्वर्ट करें।",
+    "seo.point.running": "गीतों को 180 BPM रनिंग कैडेंस या 40 से 260 BPM तक किसी भी कस्टम टेम्पो के लिए सेट करें।",
+    "seo.point.metronome": "कन्वर्ट किए गए संगीत के पीछे वैकल्पिक इलेक्ट्रॉनिक पल्स या ड्रम सेट मेट्रोनोम जोड़ें।",
+    "seo.keywordsLabel": "BPM खोज वाक्यांश"
   },
   fr: {
     "language.label": "Langue",
@@ -686,7 +749,14 @@ export const translations = {
     "error.chooseAudio": "Choisissez un fichier audio à analyser.",
     "error.supportedAudio": "Importez un fichier audio pris en charge.",
     "error.fileTooLarge": "Les fichiers audio doivent faire 80 MB ou moins.",
-    "retention.footnote": "Les fichiers importés et convertis sont stockés temporairement pour traitement et supprimés automatiquement après environ 1 heure."
+    "retention.footnote": "Les fichiers importés et convertis sont stockés temporairement pour traitement et supprimés automatiquement après environ 1 heure.",
+    "seo.eyebrow": "Convertisseur de BPM",
+    "seo.heading": "Convertisseur BPM en ligne gratuit pour la musique de course",
+    "seo.body": "Utilisez Beats Your Music pour analyser le tempo d'un morceau, convertir l'audio en 180 BPM ou vers un autre BPM cible, puis télécharger des MP3 avec la hauteur préservée pour la course, l'entraînement, la pratique et les playlists.",
+    "seo.point.batch": "Convertissez par lot plusieurs pistes MP3, WAV, FLAC, M4A, OGG ou AAC en une seule session.",
+    "seo.point.running": "Ajustez des morceaux à une cadence de course de 180 BPM ou à tout tempo personnalisé de 40 à 260 BPM.",
+    "seo.point.metronome": "Ajoutez en option une pulsation électronique ou un métronome de batterie derrière la musique convertie.",
+    "seo.keywordsLabel": "Expressions de recherche BPM"
   },
   ar: {
     "language.label": "اللغة",
@@ -780,7 +850,14 @@ export const translations = {
     "error.chooseAudio": "اختر ملفًا صوتيًا لتحليله.",
     "error.supportedAudio": "حمّل ملفًا صوتيًا مدعومًا.",
     "error.fileTooLarge": "يجب ألا تتجاوز ملفات الصوت 80 MB.",
-    "retention.footnote": "تُخزن الملفات المحملة والمحوّلة مؤقتًا للمعالجة وتُزال تلقائيًا بعد نحو ساعة واحدة."
+    "retention.footnote": "تُخزن الملفات المحملة والمحوّلة مؤقتًا للمعالجة وتُزال تلقائيًا بعد نحو ساعة واحدة.",
+    "seo.eyebrow": "محول BPM",
+    "seo.heading": "محول BPM مجاني عبر الإنترنت لموسيقى الجري",
+    "seo.body": "استخدم Beats Your Music لتحليل إيقاع الأغنية، وتحويل الصوت إلى 180 BPM أو أي BPM هدف آخر، وتنزيل ملفات MP3 مع الحفاظ على الطبقة الصوتية للجري والتمارين والتدريب وقوائم التشغيل.",
+    "seo.point.batch": "حوّل عدة مسارات MP3 أو WAV أو FLAC أو M4A أو OGG أو AAC دفعة واحدة في جلسة واحدة.",
+    "seo.point.running": "اضبط الأغاني على إيقاع جري 180 BPM أو أي سرعة مخصصة من 40 إلى 260 BPM.",
+    "seo.point.metronome": "أضف اختياريًا نبضة إلكترونية أو مترونوم طبول خلف الموسيقى المحوّلة.",
+    "seo.keywordsLabel": "عبارات بحث BPM"
   },
   bn: {
     "language.label": "ভাষা",
@@ -874,7 +951,14 @@ export const translations = {
     "error.chooseAudio": "বিশ্লেষণের জন্য একটি অডিও ফাইল বেছে নিন।",
     "error.supportedAudio": "সমর্থিত অডিও ফাইল আপলোড করুন।",
     "error.fileTooLarge": "অডিও ফাইল 80 MB বা তার কম হতে হবে।",
-    "retention.footnote": "আপলোড ও রূপান্তরিত ফাইল প্রক্রিয়াকরণের জন্য সাময়িকভাবে সংরক্ষণ করা হয় এবং প্রায় 1 ঘণ্টা পরে স্বয়ংক্রিয়ভাবে সরানো হয়।"
+    "retention.footnote": "আপলোড ও রূপান্তরিত ফাইল প্রক্রিয়াকরণের জন্য সাময়িকভাবে সংরক্ষণ করা হয় এবং প্রায় 1 ঘণ্টা পরে স্বয়ংক্রিয়ভাবে সরানো হয়।",
+    "seo.eyebrow": "BPM কনভার্টার",
+    "seo.heading": "দৌড়ের সংগীতের জন্য বিনামূল্যের অনলাইন BPM কনভার্টার",
+    "seo.body": "Beats Your Music দিয়ে গানের টেম্পো বিশ্লেষণ করুন, অডিওকে 180 BPM বা অন্য কোনো লক্ষ্য BPM-এ রূপান্তর করুন, এবং দৌড়, ওয়ার্কআউট, অনুশীলন ও প্লেলিস্টের জন্য পিচ-সংরক্ষিত MP3 ডাউনলোড করুন।",
+    "seo.point.batch": "এক সেশনে একাধিক MP3, WAV, FLAC, M4A, OGG বা AAC ট্র্যাক ব্যাচে রূপান্তর করুন।",
+    "seo.point.running": "গানকে 180 BPM রানিং ক্যাডেন্স বা 40 থেকে 260 BPM-এর যেকোনো কাস্টম টেম্পোতে টিউন করুন।",
+    "seo.point.metronome": "রূপান্তরিত সংগীতের পেছনে ঐচ্ছিক ইলেকট্রনিক পালস বা ড্রাম সেট মেট্রোনোম যোগ করুন।",
+    "seo.keywordsLabel": "BPM অনুসন্ধান বাক্যাংশ"
   },
   pt: {
     "language.label": "Idioma",
@@ -968,7 +1052,14 @@ export const translations = {
     "error.chooseAudio": "Escolha um arquivo de áudio para analisar.",
     "error.supportedAudio": "Envie um arquivo de áudio compatível.",
     "error.fileTooLarge": "Arquivos de áudio devem ter 80 MB ou menos.",
-    "retention.footnote": "Arquivos enviados e convertidos são armazenados temporariamente para processamento e removidos automaticamente após cerca de 1 hora."
+    "retention.footnote": "Arquivos enviados e convertidos são armazenados temporariamente para processamento e removidos automaticamente após cerca de 1 hora.",
+    "seo.eyebrow": "Conversor de BPM",
+    "seo.heading": "Conversor de BPM online gratuito para músicas de corrida",
+    "seo.body": "Use o Beats Your Music para analisar o tempo de uma música, converter áudio para 180 BPM ou outro BPM alvo e baixar MP3s com a altura preservada para corrida, treinos, prática e playlists.",
+    "seo.point.batch": "Converta em lote várias faixas MP3, WAV, FLAC, M4A, OGG ou AAC em uma sessão.",
+    "seo.point.running": "Ajuste músicas para uma cadência de corrida de 180 BPM ou qualquer tempo personalizado de 40 a 260 BPM.",
+    "seo.point.metronome": "Adicione opcionalmente um pulso eletrônico ou metrônomo de bateria atrás da música convertida.",
+    "seo.keywordsLabel": "Frases de busca de BPM"
   },
   ru: {
     "language.label": "Язык",
@@ -1062,7 +1153,14 @@ export const translations = {
     "error.chooseAudio": "Выберите аудиофайл для анализа.",
     "error.supportedAudio": "Загрузите поддерживаемый аудиофайл.",
     "error.fileTooLarge": "Аудиофайлы должны быть не больше 80 MB.",
-    "retention.footnote": "Загруженные и конвертированные файлы временно сохраняются для обработки и автоматически удаляются примерно через 1 час."
+    "retention.footnote": "Загруженные и конвертированные файлы временно сохраняются для обработки и автоматически удаляются примерно через 1 час.",
+    "seo.eyebrow": "Конвертер BPM",
+    "seo.heading": "Бесплатный онлайн-конвертер BPM для музыки для бега",
+    "seo.body": "Используйте Beats Your Music, чтобы анализировать темп песни, конвертировать аудио в 180 BPM или другой целевой BPM и скачивать MP3 с сохраненной высотой тона для бега, тренировок, практики и плейлистов.",
+    "seo.point.batch": "Пакетно конвертируйте несколько треков MP3, WAV, FLAC, M4A, OGG или AAC за один сеанс.",
+    "seo.point.running": "Настраивайте песни под беговую частоту 180 BPM или любой пользовательский темп от 40 до 260 BPM.",
+    "seo.point.metronome": "При желании добавьте электронный пульс или метроном ударной установки на фон конвертированной музыки.",
+    "seo.keywordsLabel": "Поисковые фразы BPM"
   },
   ur: {
     "language.label": "زبان",
@@ -1156,7 +1254,14 @@ export const translations = {
     "error.chooseAudio": "تجزیے کے لیے آڈیو فائل منتخب کریں۔",
     "error.supportedAudio": "معاون آڈیو فائل اپ لوڈ کریں۔",
     "error.fileTooLarge": "آڈیو فائلیں 80 MB یا کم ہونی چاہئیں۔",
-    "retention.footnote": "اپ لوڈ اور کنورٹ کی گئی فائلیں پروسیسنگ کے لیے عارضی طور پر محفوظ ہوتی ہیں اور تقریباً 1 گھنٹے بعد خودکار طور پر ہٹا دی جاتی ہیں۔"
+    "retention.footnote": "اپ لوڈ اور کنورٹ کی گئی فائلیں پروسیسنگ کے لیے عارضی طور پر محفوظ ہوتی ہیں اور تقریباً 1 گھنٹے بعد خودکار طور پر ہٹا دی جاتی ہیں۔",
+    "seo.eyebrow": "BPM کنورٹر",
+    "seo.heading": "دوڑنے کی موسیقی کے لیے مفت آن لائن BPM کنورٹر",
+    "seo.body": "Beats Your Music سے گانے کا ٹیمپو تجزیہ کریں، آڈیو کو 180 BPM یا کسی دوسرے ہدف BPM میں تبدیل کریں، اور دوڑ، ورزش، مشق اور پلے لسٹس کے لیے اصل پچ محفوظ رکھنے والی MP3 فائلیں ڈاؤن لوڈ کریں۔",
+    "seo.point.batch": "ایک ہی سیشن میں متعدد MP3، WAV، FLAC، M4A، OGG یا AAC ٹریکس کو بیچ میں کنورٹ کریں۔",
+    "seo.point.running": "گانوں کو 180 BPM دوڑ کی کیڈنس یا 40 سے 260 BPM تک کسی بھی حسب ضرورت ٹیمپو پر سیٹ کریں۔",
+    "seo.point.metronome": "کنورٹ شدہ موسیقی کے پس منظر میں اختیاری الیکٹرانک پلس یا ڈرم سیٹ میٹرونوم شامل کریں۔",
+    "seo.keywordsLabel": "BPM تلاش کے فقرے"
   }
 };
 
@@ -1170,6 +1275,20 @@ export function isSupportedLanguage(language) {
 
 export function getLanguageDirection(language) {
   return RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
+}
+
+export function getLanguagePath(language) {
+  const segment = LANGUAGE_ROUTE_SEGMENTS[language];
+  return segment ? `/${segment}/` : "/";
+}
+
+export function getLanguageFromPathname(pathname = "") {
+  const [segment] = String(pathname)
+    .split(/[?#]/)[0]
+    .split("/")
+    .filter(Boolean);
+
+  return ROUTE_SEGMENT_TO_LANGUAGE[String(segment || "").toLowerCase()] || null;
 }
 
 export function detectLanguage(languages) {
@@ -1194,6 +1313,12 @@ export function detectLanguage(languages) {
 export function getInitialLanguage(environment = {}) {
   const storage = environment.localStorage ?? globalThis.localStorage;
   const navigatorSource = environment.navigator ?? globalThis.navigator;
+  const locationSource = environment.location ?? globalThis.location;
+  const routeLanguage = getLanguageFromPathname(locationSource?.pathname);
+
+  if (routeLanguage) {
+    return routeLanguage;
+  }
 
   try {
     const stored = storage?.getItem("beats-your-music-language");

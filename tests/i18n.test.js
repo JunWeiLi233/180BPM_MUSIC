@@ -7,7 +7,10 @@ import {
   SUPPORTED_LANGUAGES,
   createTranslator,
   detectLanguage,
+  getInitialLanguage,
   getLanguageDirection,
+  getLanguageFromPathname,
+  getLanguagePath,
   translations
 } from "../src/i18n.js";
 
@@ -42,6 +45,26 @@ describe("i18n", () => {
     expect(getLanguageDirection("ur")).toBe("rtl");
     expect(getLanguageDirection("en")).toBe("ltr");
     expect(getLanguageDirection("zh-Hant")).toBe("ltr");
+  });
+
+  it("maps localized SEO paths to language codes", () => {
+    expect(getLanguagePath("fr")).toBe("/fr/");
+    expect(getLanguagePath("zh-Hant")).toBe("/zh-hant/");
+    expect(getLanguagePath("en")).toBe("/");
+    expect(getLanguageFromPathname("/fr/")).toBe("fr");
+    expect(getLanguageFromPathname("/zh-hant/")).toBe("zh-Hant");
+    expect(getLanguageFromPathname("/unknown/")).toBeNull();
+  });
+
+  it("uses the localized path before stored or browser language preferences", () => {
+    const localStorage = {
+      getItem: () => "en"
+    };
+    const navigator = {
+      languages: ["es-MX"]
+    };
+
+    expect(getInitialLanguage({ location: { pathname: "/fr/" }, localStorage, navigator })).toBe("fr");
   });
 
   it("includes complete translation keys for every supported language", () => {

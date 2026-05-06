@@ -29,6 +29,8 @@ import {
   removeFileIfExists,
   removeStoredPair
 } from "./audio-utils.js";
+import { DEFAULT_LANGUAGE, getLanguageFromPathname } from "../src/i18n.js";
+import { decorateHtmlForSeo } from "./seo-html.js";
 
 await ensureStorage();
 
@@ -230,12 +232,16 @@ app.get("/api/download/:fileId", (req, res) => {
   res.download(record.outputPath, `${baseName || "track"}-${record.targetBpm}bpm.mp3`);
 });
 
-app.use(express.static(distPath));
+app.use(express.static(distPath, { index: false }));
 
-app.get(/^(?!\/api(?:\/|$)).*/, (_req, res, next) => {
-  res.sendFile(path.join(distPath, "index.html"), (error) => {
-    if (error) next();
-  });
+app.get(/^(?!\/api(?:\/|$)).*/, async (req, res, next) => {
+  try {
+    const html = await fs.readFile(path.join(distPath, "index.html"), "utf8");
+    const language = getLanguageFromPathname(req.path) || DEFAULT_LANGUAGE;
+    res.type("html").send(decorateHtmlForSeo(html, language));
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use((error, _req, res, _next) => {

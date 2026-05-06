@@ -34,6 +34,15 @@ This project is Render-ready as one Node Web Service.
 
 The included `render.yaml` can be used as a Render Blueprint after the project is pushed to GitHub.
 
+## Google Search Setup
+
+- Production domain: `https://beatsyourmusic.com/`
+- Sitemap URL: `https://beatsyourmusic.com/sitemap.xml`
+- Robots URL: `https://beatsyourmusic.com/robots.txt`
+- Localized search pages: `/es/`, `/zh/`, `/zh-hant/`, `/de/`, `/hi/`, `/fr/`, `/ar/`, `/bn/`, `/pt/`, `/ru/`, and `/ur/`
+
+After deployment, add the domain property in Google Search Console, submit the sitemap URL, then use URL Inspection to request indexing for the homepage and the localized BPM converter pages. Google does not rely on the old `meta keywords` tag for ranking, so BPM search phrases are also included in crawlable page text, localized titles/descriptions, structured data, `hreflang`, and the sitemap.
+
 ## Notes
 
 - Supported input: common audio files such as MP3, WAV, M4A, AAC, OGG, FLAC, AIFF, and AIF.
