@@ -1,5 +1,12 @@
 import { DEFAULT_LANGUAGE, getLanguageDirection } from "../src/i18n.js";
-import { getSeoAlternates, getSeoKeywords, getSeoPage, getSeoUrl } from "../src/seo.js";
+import {
+  SITE_ORIGIN,
+  getSeoAlternates,
+  getSeoKeywords,
+  getSeoPage,
+  getSeoUrl,
+  getStaticSeoPage
+} from "../src/seo.js";
 
 function escapeAttribute(value) {
   return String(value)
@@ -35,29 +42,44 @@ function buildAlternateLinks() {
     .join("\n    ");
 }
 
-function buildStructuredData(page, canonicalUrl, keywords) {
-  return {
+function buildStructuredData(page, canonicalUrl, keywords, schemaType = "WebApplication") {
+  const data = {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "Beats Your Music",
+    "@type": schemaType,
+    name: schemaType === "WebPage" ? page.title : "Beats Your Music",
     url: canonicalUrl,
     inLanguage: page.hreflang,
-    applicationCategory: "MultimediaApplication",
-    operatingSystem: "Any",
     description: page.description,
-    keywords,
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD"
-    },
-    featureList: [
-      "Detect source BPM from uploaded audio",
-      "Convert music to a target BPM such as 180 BPM",
-      "Batch convert multiple audio tracks",
-      "Mix optional electronic pulse or drum set metronome",
-      "Preserve pitch while changing tempo"
-    ]
+    keywords
+  };
+
+  if (schemaType === "WebApplication") {
+    return {
+      ...data,
+      applicationCategory: "MultimediaApplication",
+      operatingSystem: "Any",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD"
+      },
+      featureList: [
+        "Detect source BPM from uploaded audio",
+        "Convert music to a target BPM such as 180 BPM",
+        "Batch convert multiple audio tracks",
+        "Mix optional electronic pulse or drum set metronome",
+        "Preserve pitch while changing tempo"
+      ]
+    };
+  }
+
+  return {
+    ...data,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Beats Your Music",
+      url: `${SITE_ORIGIN}/`
+    }
   };
 }
 
@@ -71,12 +93,13 @@ function buildNoscriptFallback(page, keywords) {
     </noscript>`;
 }
 
-export function decorateHtmlForSeo(html, language = DEFAULT_LANGUAGE) {
-  const page = getSeoPage(language);
-  const canonicalUrl = getSeoUrl(page.language);
-  const keywords = getSeoKeywords(page.language);
+export function decorateHtmlForSeo(html, language = DEFAULT_LANGUAGE, pathname = "") {
+  const staticPage = getStaticSeoPage(pathname);
+  const page = staticPage || getSeoPage(language);
+  const canonicalUrl = staticPage ? `${SITE_ORIGIN}${page.path}` : getSeoUrl(page.language);
+  const keywords = staticPage ? page.keywords.join(", ") : getSeoKeywords(page.language);
   const direction = getLanguageDirection(page.language);
-  const structuredData = buildStructuredData(page, canonicalUrl, keywords);
+  const structuredData = buildStructuredData(page, canonicalUrl, keywords, staticPage ? "WebPage" : "WebApplication");
   let nextHtml = html.replace(
     /<html\b[^>]*>/i,
     `<html lang="${escapeAttribute(page.hreflang)}" dir="${escapeAttribute(direction)}">`
@@ -128,7 +151,9 @@ export function decorateHtmlForSeo(html, language = DEFAULT_LANGUAGE) {
     `<meta name="twitter:description" content="${escapeAttribute(page.description)}" />`
   );
 
-  const alternateLinks = buildAlternateLinks();
+  const alternateLinks = staticPage
+    ? `<link rel="alternate" hreflang="x-default" href="${escapeAttribute(canonicalUrl)}" />`
+    : buildAlternateLinks();
   if (/<!-- seo:alternates:start -->[\s\S]*?<!-- seo:alternates:end -->/i.test(nextHtml)) {
     nextHtml = nextHtml.replace(
       /<!-- seo:alternates:start -->[\s\S]*?<!-- seo:alternates:end -->/i,

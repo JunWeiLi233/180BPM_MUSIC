@@ -155,6 +155,112 @@ function persistLanguage(language) {
   }
 }
 
+function isHighBpmRoute(pathname = "") {
+  return String(pathname).replace(/\/+$/, "") === "/why-high-bpm";
+}
+
+function RunnerCadenceSvg() {
+  return (
+    <svg
+      className="runner-cadence-svg"
+      viewBox="0 0 720 520"
+      role="img"
+      aria-label="Runner comparing high BPM cadence with low BPM cadence"
+    >
+      <defs>
+        <linearGradient id="stride-energy" x1="92" x2="640" y1="84" y2="438" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#9cf032" />
+          <stop offset="1" stopColor="#f5c64a" />
+        </linearGradient>
+      </defs>
+      <rect className="cadence-skyline" x="54" y="74" width="612" height="372" rx="28" />
+      <path className="low-bpm-line" d="M84 350 C180 334 224 382 320 366 C420 350 468 398 628 372" />
+      <path className="high-bpm-line" d="M84 276 C156 228 222 228 292 276 S430 324 504 276 590 228 636 252" />
+      <g className="low-strides" aria-hidden="true">
+        <line x1="118" x2="170" y1="401" y2="401" />
+        <line x1="256" x2="326" y1="401" y2="401" />
+        <line x1="438" x2="538" y1="401" y2="401" />
+      </g>
+      <g className="high-strides" aria-hidden="true">
+        <line x1="104" x2="130" y1="214" y2="214" />
+        <line x1="160" x2="186" y1="214" y2="214" />
+        <line x1="216" x2="242" y1="214" y2="214" />
+        <line x1="272" x2="298" y1="214" y2="214" />
+        <line x1="328" x2="354" y1="214" y2="214" />
+        <line x1="384" x2="410" y1="214" y2="214" />
+        <line x1="440" x2="466" y1="214" y2="214" />
+        <line x1="496" x2="522" y1="214" y2="214" />
+        <line x1="552" x2="578" y1="214" y2="214" />
+      </g>
+      <g className="runner-figure" aria-hidden="true">
+        <circle cx="332" cy="156" r="29" />
+        <path d="M322 188 C292 218 284 250 302 286" />
+        <path d="M310 220 C256 218 232 196 214 166" />
+        <path d="M300 238 C342 228 374 208 406 178" />
+        <path d="M302 286 C264 320 232 354 196 394" />
+        <path d="M306 286 C356 306 404 332 456 374" />
+        <path d="M198 394 L154 382" />
+        <path d="M456 374 L514 374" />
+      </g>
+      <g className="tempo-tags" aria-hidden="true">
+        <rect x="88" y="110" width="170" height="46" rx="23" />
+        <text x="173" y="140" textAnchor="middle">High BPM</text>
+        <rect x="456" y="398" width="166" height="46" rx="23" />
+        <text x="539" y="428" textAnchor="middle">Low BPM</text>
+      </g>
+    </svg>
+  );
+}
+
+function HighBpmPage() {
+  return (
+    <main className="bpm-lesson-shell">
+      <section className="bpm-lesson-hero" aria-labelledby="bpm-lesson-title">
+        <div className="lesson-copy">
+          <a className="lesson-back-link" href="/">
+            Back to converter
+          </a>
+          <p className="eyebrow">Running cadence guide</p>
+          <h1 id="bpm-lesson-title">Why high-BPM music helps running</h1>
+          <p className="lesson-lede">
+            High-BPM music gives new runners a steady external cue. When the beat is quick and even, it is
+            easier to keep lighter steps, reduce overstriding, and stay close to a consistent cadence.
+          </p>
+          <div className="lesson-actions">
+            <a className="primary-action" href="/">
+              Start converting music
+            </a>
+            <a className="secondary-action" href="/#target-bpm-input">
+              Set a target BPM
+            </a>
+          </div>
+        </div>
+
+        <div className="lesson-visual">
+          <RunnerCadenceSvg />
+        </div>
+      </section>
+
+      <section className="cadence-comparison" aria-label="High BPM and low BPM comparison">
+        <article>
+          <span>High BPM: quicker cadence</span>
+          <p>
+            Faster music can act like a metronome. It nudges the body toward shorter ground contact and a
+            smoother rhythm, especially when the target is near 170 to 190 BPM.
+          </p>
+        </article>
+        <article>
+          <span>Low BPM: longer, heavier steps</span>
+          <p>
+            Slower beats often invite longer strides. That can make the run feel heavier and less consistent,
+            particularly for beginners still learning pacing.
+          </p>
+        </article>
+      </section>
+    </main>
+  );
+}
+
 function App() {
   const inputRef = useRef(null);
   const [language, setLanguage] = useState(() => getInitialLanguage());
@@ -165,13 +271,16 @@ function App() {
   const tracksRef = useRef([]);
   const [activeTrackId, setActiveTrackId] = useState(null);
 
+  const isLessonPage = isHighBpmRoute(globalThis.location?.pathname);
   const t = useMemo(() => createTranslator(language), [language]);
 
   useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = getLanguageDirection(language);
-    persistLanguage(language);
-  }, [language]);
+    document.documentElement.lang = isLessonPage ? "en" : language;
+    document.documentElement.dir = isLessonPage ? "ltr" : getLanguageDirection(language);
+    if (!isLessonPage) {
+      persistLanguage(language);
+    }
+  }, [language, isLessonPage]);
 
   useEffect(() => {
     tracksRef.current = tracks;
@@ -406,6 +515,10 @@ function App() {
     analyzeFiles(event.dataTransfer.files);
   }
 
+  if (isLessonPage) {
+    return <HighBpmPage />;
+  }
+
   return (
     <main className="app-shell">
       <section className="console" aria-labelledby="app-title">
@@ -429,6 +542,10 @@ function App() {
             <strong>{targetChipBpm}</strong>
             <b>BPM</b>
           </div>
+
+          <a className="learn-link" href="/why-high-bpm/">
+            Why high BPM?
+          </a>
 
           <label className="language-picker">
             <span>{t("language.label")}</span>

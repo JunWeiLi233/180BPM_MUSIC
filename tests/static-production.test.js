@@ -70,6 +70,7 @@ describe("search engine metadata", () => {
     expect(sitemap).toContain("<loc>https://beatsyourmusic.com/fr/</loc>");
     expect(sitemap).toContain("<loc>https://beatsyourmusic.com/hi/</loc>");
     expect(sitemap).toContain("<loc>https://beatsyourmusic.com/ar/</loc>");
+    expect(sitemap).toContain("<loc>https://beatsyourmusic.com/why-high-bpm/</loc>");
     expect(sitemap).toContain("<lastmod>2026-05-06</lastmod>");
   });
 
@@ -101,6 +102,22 @@ describe("search engine metadata", () => {
       expect(arabic.text).toContain('<html lang="ar" dir="rtl">');
       expect(arabic.text).toContain('<link rel="canonical" href="https://beatsyourmusic.com/ar/" />');
       expect(arabic.text).toContain("محول BPM");
+    } finally {
+      await fs.rm(indexPath, { force: true });
+    }
+  });
+
+  it("serves dedicated SEO metadata on the high-BPM explainer page", async () => {
+    await fs.mkdir(distDir, { recursive: true });
+    await fs.writeFile(indexPath, testHtml);
+
+    try {
+      const response = await request(app).get("/why-high-bpm/").expect(200);
+
+      expect(response.text).toContain("<title>Why High BPM Music Helps Running | Beats Your Music</title>");
+      expect(response.text).toContain('<link rel="canonical" href="https://beatsyourmusic.com/why-high-bpm/" />');
+      expect(response.text).toContain("running cadence");
+      expect(response.text).toContain("high BPM music");
     } finally {
       await fs.rm(indexPath, { force: true });
     }

@@ -19,6 +19,7 @@ The API runs at `http://127.0.0.1:4177`. Vite proxies `/api` requests to that se
 npm test
 npm run build
 npm run test:browser
+npm run test:browser:high-bpm
 npm run test:browser:multi
 ```
 

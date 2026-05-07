@@ -238,7 +238,7 @@ app.get(/^(?!\/api(?:\/|$)).*/, async (req, res, next) => {
   try {
     const html = await fs.readFile(path.join(distPath, "index.html"), "utf8");
     const language = getLanguageFromPathname(req.path) || DEFAULT_LANGUAGE;
-    res.type("html").send(decorateHtmlForSeo(html, language));
+    res.type("html").send(decorateHtmlForSeo(html, language, req.path));
   } catch (error) {
     next(error);
   }

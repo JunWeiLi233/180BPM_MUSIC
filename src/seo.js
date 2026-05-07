@@ -2,6 +2,23 @@ import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, getLanguagePath } from "./i18n.j
 
 export const SITE_ORIGIN = "https://beatsyourmusic.com";
 
+export const HIGH_BPM_SEO_PAGE = {
+  path: "/why-high-bpm/",
+  language: "en",
+  hreflang: "en",
+  title: "Why High BPM Music Helps Running | Beats Your Music",
+  description:
+    "Learn why high BPM music helps new runners keep a quicker running cadence, avoid low-BPM overstriding, and choose better workout tempo targets.",
+  keywords: [
+    "high BPM music",
+    "running cadence",
+    "180 BPM running",
+    "high BPM running songs",
+    "low BPM running",
+    "music for running pace"
+  ]
+};
+
 export const SEO_LANGUAGE_PAGES = [
   {
     language: "en",
@@ -192,6 +209,16 @@ const SEO_PAGE_BY_LANGUAGE = new Map(SEO_LANGUAGE_PAGES.map((page) => [page.lang
 
 export function getSeoPage(language = DEFAULT_LANGUAGE) {
   return SEO_PAGE_BY_LANGUAGE.get(language) || SEO_PAGE_BY_LANGUAGE.get(DEFAULT_LANGUAGE);
+}
+
+export function getStaticSeoPage(pathname = "") {
+  const normalizedPath = `/${String(pathname)
+    .split(/[?#]/)[0]
+    .split("/")
+    .filter(Boolean)
+    .join("/")}/`;
+
+  return normalizedPath === HIGH_BPM_SEO_PAGE.path ? HIGH_BPM_SEO_PAGE : null;
 }
 
 export function getSeoUrl(language = DEFAULT_LANGUAGE) {
