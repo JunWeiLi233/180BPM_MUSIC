@@ -159,13 +159,15 @@ function isHighBpmRoute(pathname = "") {
   return String(pathname).replace(/\/+$/, "") === "/why-high-bpm";
 }
 
-function RunnerCadenceSvg() {
+function RunnerCadenceSvg({ mode }) {
+  const isHigh = mode === "high";
+
   return (
     <svg
       className="runner-cadence-svg"
       viewBox="0 0 720 520"
       role="img"
-      aria-label="Runner comparing high BPM cadence with low BPM cadence"
+      aria-label="Human runner silhouette showing the selected BPM cadence diagram"
     >
       <defs>
         <linearGradient id="stride-energy" x1="92" x2="640" y1="84" y2="438" gradientUnits="userSpaceOnUse">
@@ -173,46 +175,53 @@ function RunnerCadenceSvg() {
           <stop offset="1" stopColor="#f5c64a" />
         </linearGradient>
       </defs>
-      <rect className="cadence-skyline" x="54" y="74" width="612" height="372" rx="28" />
-      <path className="low-bpm-line" d="M84 350 C180 334 224 382 320 366 C420 350 468 398 628 372" />
-      <path className="high-bpm-line" d="M84 276 C156 228 222 228 292 276 S430 324 504 276 590 228 636 252" />
-      <g className="low-strides" aria-hidden="true">
-        <line x1="118" x2="170" y1="401" y2="401" />
-        <line x1="256" x2="326" y1="401" y2="401" />
-        <line x1="438" x2="538" y1="401" y2="401" />
+      <rect className="cadence-skyline" x="54" y="64" width="612" height="392" rx="28" />
+
+      {isHigh ? (
+        <g className="cadence-diagram is-high">
+          <text x="108" y="124">Quick cadence pattern</text>
+          <path className="high-bpm-line" d="M90 354 C158 314 220 314 288 354 S426 394 498 354 598 314 636 338" />
+          <g className="high-strides" aria-hidden="true">
+            {[110, 164, 218, 272, 326, 380, 434, 488, 542, 596].map((x) => (
+              <line key={x} x1={x} x2={x + 24} y1="408" y2="408" />
+            ))}
+          </g>
+          <text className="diagram-note" x="108" y="438">Many compact footfalls keep rhythm steady.</text>
+        </g>
+      ) : (
+        <g className="cadence-diagram is-low">
+          <text x="108" y="124">Longer stride pattern</text>
+          <path className="low-bpm-line" d="M90 366 C186 334 250 406 350 374 C456 342 520 414 636 384" />
+          <g className="low-strides" aria-hidden="true">
+            {[120, 288, 500].map((x) => (
+              <line key={x} x1={x} x2={x + 96} y1="408" y2="408" />
+            ))}
+          </g>
+          <text className="diagram-note" x="108" y="438">Fewer longer steps can make pace feel heavier.</text>
+        </g>
+      )}
+
+      {/* Runner silhouette adapted from SVG Repo's CC0 "runner-silhouette" vector. */}
+      <g className={`real-runner ${isHigh ? "is-high" : "is-low"}`} aria-hidden="true" transform="translate(238 118) scale(2.08)">
+        <path d="M14.058,112.273c-2.671,0-5.174-1.659-6.123-4.319c-1.206-3.381,0.558-7.1,3.939-8.305 c8.797-3.145,18.032-8.08,19.576-10.444c2.219-7.225,9.508-23.93,9.82-24.645c1.437-3.29,5.27-4.792,8.559-3.354 c3.29,1.438,4.791,5.269,3.354,8.559c-2.062,4.719-7.76,18.121-9.35,23.401c-2.609,8.664-18.407,15.452-27.592,18.727 C15.52,112.151,14.783,112.273,14.058,112.273z" />
+        <path d="M65.87,121.352c-0.763,0-1.538-0.136-2.294-0.421c-3.358-1.268-5.054-5.018-3.787-8.376 c2.805-7.434,5.827-16.579,6.66-20.561c-2.797-2.67-9.536-8.242-15.298-12.741c-2.83-2.21-3.332-6.294-1.123-9.124 c2.21-2.828,6.295-3.33,9.124-1.122c17.609,13.751,19.027,16.47,19.633,17.63c1.21,2.32,2.716,5.208-6.833,30.508 C70.969,119.747,68.497,121.352,65.87,121.352z" />
+        <circle cx="76.713" cy="14.166" r="14.166" />
+        <path d="M68.121,26.851c0,0,1.546,0.19,2.986,0.859c1.375,0.64,2.783,1.641,2.783,1.641l0.036,0.024 c3.896,2.979,6.987,8.574,4.649,13.91L66.033,71.93c-2.727,6.223-10.594,7.369-16.32,4.86c-0.975-0.427-1.907-0.958-2.773-1.583 c-4.06-2.921-7.093-8.293-4.722-13.708l12.545-28.645C57.09,27.538,63.32,26.015,68.121,26.851z" />
+        <path d="M28.649,50.542c-1.12,0-2.25-0.34-3.225-1.048c-2.458-1.783-3.006-5.22-1.224-7.679 c2.7-3.724,9.596-12.598,15.307-14.555c5.321-1.824,21.093-0.901,25.8-0.575c3.03,0.21,5.316,2.836,5.106,5.867 c-0.209,3.029-2.805,5.313-5.866,5.107c-8.536-0.589-19.204-0.728-21.479,0.009c-1.657,0.663-6.417,5.722-9.963,10.605 C32.029,49.755,30.351,50.542,28.649,50.542z" />
+        <path d="M85.548,44.799c-5.263,0-10.754-0.317-13.907-0.536c-3.03-0.21-5.316-2.836-5.106-5.867 c0.209-3.029,2.8-5.319,5.866-5.107c8.536,0.591,19.204,0.728,21.478-0.009c1.666-0.666,6.426-5.725,9.964-10.604 c1.784-2.458,5.222-3.007,7.682-1.224c2.459,1.783,3.007,5.222,1.225,7.681c-2.7,3.724-9.597,12.597-15.308,14.554 C94.971,44.535,90.355,44.799,85.548,44.799z" />
       </g>
-      <g className="high-strides" aria-hidden="true">
-        <line x1="104" x2="130" y1="214" y2="214" />
-        <line x1="160" x2="186" y1="214" y2="214" />
-        <line x1="216" x2="242" y1="214" y2="214" />
-        <line x1="272" x2="298" y1="214" y2="214" />
-        <line x1="328" x2="354" y1="214" y2="214" />
-        <line x1="384" x2="410" y1="214" y2="214" />
-        <line x1="440" x2="466" y1="214" y2="214" />
-        <line x1="496" x2="522" y1="214" y2="214" />
-        <line x1="552" x2="578" y1="214" y2="214" />
-      </g>
-      <g className="runner-figure" aria-hidden="true">
-        <circle cx="332" cy="156" r="29" />
-        <path d="M322 188 C292 218 284 250 302 286" />
-        <path d="M310 220 C256 218 232 196 214 166" />
-        <path d="M300 238 C342 228 374 208 406 178" />
-        <path d="M302 286 C264 320 232 354 196 394" />
-        <path d="M306 286 C356 306 404 332 456 374" />
-        <path d="M198 394 L154 382" />
-        <path d="M456 374 L514 374" />
-      </g>
+
       <g className="tempo-tags" aria-hidden="true">
-        <rect x="88" y="110" width="170" height="46" rx="23" />
-        <text x="173" y="140" textAnchor="middle">High BPM</text>
-        <rect x="456" y="398" width="166" height="46" rx="23" />
-        <text x="539" y="428" textAnchor="middle">Low BPM</text>
+        <rect x="470" y="94" width="150" height="46" rx="23" />
+        <text x="545" y="124" textAnchor="middle">{isHigh ? "High BPM" : "Low BPM"}</text>
       </g>
     </svg>
   );
 }
 
 function HighBpmPage() {
+  const [diagramMode, setDiagramMode] = useState("high");
+
   return (
     <main className="bpm-lesson-shell">
       <section className="bpm-lesson-hero" aria-labelledby="bpm-lesson-title">
@@ -237,7 +246,25 @@ function HighBpmPage() {
         </div>
 
         <div className="lesson-visual">
-          <RunnerCadenceSvg />
+          <div className="diagram-switch" aria-label="Select BPM cadence diagram">
+            <button
+              className={diagramMode === "low" ? "is-selected" : ""}
+              type="button"
+              onClick={() => setDiagramMode("low")}
+              aria-pressed={diagramMode === "low"}
+            >
+              Low BPM diagram
+            </button>
+            <button
+              className={diagramMode === "high" ? "is-selected" : ""}
+              type="button"
+              onClick={() => setDiagramMode("high")}
+              aria-pressed={diagramMode === "high"}
+            >
+              High BPM diagram
+            </button>
+          </div>
+          <RunnerCadenceSvg mode={diagramMode} />
         </div>
       </section>
 

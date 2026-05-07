@@ -27,7 +27,14 @@ async function main() {
   await page.getByText("High-BPM music gives new runners a steady external cue").waitFor();
   await page.getByText("High BPM: quicker cadence").waitFor();
   await page.getByText("Low BPM: longer, heavier steps").waitFor();
-  await page.getByRole("img", { name: "Runner comparing high BPM cadence with low BPM cadence" }).waitFor();
+  await page.getByRole("button", { name: "High BPM diagram" }).waitFor();
+  await page.getByRole("button", { name: "Low BPM diagram" }).waitFor();
+  await page.getByText("Quick cadence pattern").waitFor();
+  await page.getByRole("img", { name: "Human runner silhouette showing the selected BPM cadence diagram" }).waitFor();
+  await page.getByRole("button", { name: "Low BPM diagram" }).click();
+  await page.getByText("Longer stride pattern").waitFor();
+  await page.getByRole("button", { name: "High BPM diagram" }).click();
+  await page.getByText("Quick cadence pattern").waitFor();
   await page.getByRole("link", { name: "Start converting music" }).click();
   await page.getByRole("heading", { name: "Beats Your Music" }).waitFor();
 

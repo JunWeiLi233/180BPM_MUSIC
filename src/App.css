@@ -1327,7 +1327,44 @@ h2 {
 }
 
 .lesson-visual {
+  display: grid;
+  gap: 12px;
   min-width: 0;
+}
+
+.diagram-switch {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.diagram-switch button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.diagram-switch button:hover {
+  border-color: rgba(156, 240, 50, 0.52);
+}
+
+.diagram-switch button.is-selected {
+  border-color: rgba(156, 240, 50, 0.78);
+  background: var(--lime);
+  color: #101609;
+}
+
+.diagram-switch button:active {
+  transform: translateY(1px);
 }
 
 .runner-cadence-svg {
@@ -1339,6 +1376,18 @@ h2 {
 .cadence-skyline {
   fill: rgba(255, 255, 255, 0.035);
   stroke: rgba(218, 230, 220, 0.14);
+}
+
+.cadence-diagram > text:first-child {
+  fill: var(--text);
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.cadence-diagram .diagram-note {
+  fill: var(--muted);
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .high-bpm-line,
@@ -1373,19 +1422,17 @@ h2 {
   stroke-width: 7;
 }
 
-.runner-figure {
-  fill: none;
-  stroke: #f5f8f2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 18;
-  transform-origin: 330px 270px;
-  animation: runner-drive 900ms ease-in-out infinite alternate;
+.real-runner {
+  fill: var(--text);
+  filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.35));
 }
 
-.runner-figure circle {
+.real-runner.is-high {
   fill: #f5f8f2;
-  stroke: none;
+}
+
+.real-runner.is-low {
+  fill: #cdd5cf;
 }
 
 .tempo-tags rect {
