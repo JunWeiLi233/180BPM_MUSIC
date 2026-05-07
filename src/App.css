@@ -193,13 +193,50 @@ input:focus-visible {
   }
 }
 
-@keyframes runner-drive {
+@keyframes runner-bpm-drive {
+  0%,
+  100% {
+    transform: translate3d(-2px, 2px, 0) rotate(-1.2deg) scaleY(0.995);
+  }
+
+  38% {
+    transform: translate3d(4px, -7px, 0) rotate(1.35deg) scaleY(1.01);
+  }
+
+  64% {
+    transform: translate3d(6px, -1px, 0) rotate(0.25deg) scaleY(1);
+  }
+}
+
+@keyframes cadence-flow {
   from {
-    transform: translate3d(-8px, 4px, 0) rotate(-1.5deg);
+    stroke-dashoffset: 0;
   }
 
   to {
-    transform: translate3d(8px, -3px, 0) rotate(1.2deg);
+    stroke-dashoffset: -48;
+  }
+}
+
+@keyframes stride-hit {
+  0% {
+    opacity: 0.24;
+    transform: scaleX(0.68) translateY(2px);
+  }
+
+  24% {
+    opacity: 1;
+    transform: scaleX(1.12) translateY(-1px);
+  }
+
+  62% {
+    opacity: 0.55;
+    transform: scaleX(0.92) translateY(0);
+  }
+
+  100% {
+    opacity: 0.24;
+    transform: scaleX(0.76) translateY(2px);
   }
 }
 
@@ -1367,10 +1404,21 @@ h2 {
   transform: translateY(1px);
 }
 
+.diagram-tempo-readout {
+  justify-self: end;
+  margin: -4px 2px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .runner-cadence-svg {
   display: block;
   width: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .cadence-skyline {
@@ -1399,17 +1447,25 @@ h2 {
 .high-bpm-line {
   stroke: url(#stride-energy);
   stroke-width: 8;
+  stroke-dasharray: 28 16;
+  animation: cadence-flow var(--beat-duration) linear infinite;
 }
 
 .low-bpm-line {
   stroke: rgba(154, 165, 159, 0.42);
   stroke-width: 6;
   stroke-dasharray: 14 16;
+  animation: cadence-flow var(--beat-duration) linear infinite;
 }
 
 .high-strides line,
 .low-strides line {
   stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: stride-hit var(--beat-duration) ease-out infinite;
+  animation-delay: var(--stride-delay, 0s);
+  will-change: opacity, transform;
 }
 
 .high-strides line {
@@ -1425,14 +1481,20 @@ h2 {
 .real-runner {
   fill: var(--text);
   filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.35));
+  transform-box: fill-box;
+  transform-origin: 52% 68%;
+  animation: runner-bpm-drive var(--beat-duration) cubic-bezier(0.42, 0, 0.18, 1) infinite;
+  will-change: transform;
 }
 
 .real-runner.is-high {
   fill: #f5f8f2;
+  animation-timing-function: cubic-bezier(0.38, 0, 0.14, 1);
 }
 
 .real-runner.is-low {
   fill: #cdd5cf;
+  animation-timing-function: cubic-bezier(0.36, 0.05, 0.28, 1);
 }
 
 .tempo-tags rect {

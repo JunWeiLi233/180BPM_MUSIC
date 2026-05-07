@@ -30,11 +30,27 @@ async function main() {
   await page.getByRole("button", { name: "High BPM diagram" }).waitFor();
   await page.getByRole("button", { name: "Low BPM diagram" }).waitFor();
   await page.getByText("Quick cadence pattern").waitFor();
-  await page.getByRole("img", { name: "Human runner silhouette showing the selected BPM cadence diagram" }).waitFor();
+  const runnerDiagram = page.getByRole("img", { name: "Human runner silhouette showing the selected BPM cadence diagram" });
+  await runnerDiagram.waitFor();
+  await page.getByText("Animation paced at 180 BPM").waitFor();
+  if ((await runnerDiagram.getAttribute("data-bpm")) !== "180") {
+    throw new Error("High BPM diagram should animate at 180 BPM.");
+  }
+  if ((await runnerDiagram.getAttribute("data-beat-duration")) !== "0.333s") {
+    throw new Error("High BPM diagram should expose a 0.333s beat duration.");
+  }
   await page.getByRole("button", { name: "Low BPM diagram" }).click();
   await page.getByText("Longer stride pattern").waitFor();
+  await page.getByText("Animation paced at 90 BPM").waitFor();
+  if ((await runnerDiagram.getAttribute("data-bpm")) !== "90") {
+    throw new Error("Low BPM diagram should animate at 90 BPM.");
+  }
+  if ((await runnerDiagram.getAttribute("data-beat-duration")) !== "0.667s") {
+    throw new Error("Low BPM diagram should expose a 0.667s beat duration.");
+  }
   await page.getByRole("button", { name: "High BPM diagram" }).click();
   await page.getByText("Quick cadence pattern").waitFor();
+  await page.getByText("Animation paced at 180 BPM").waitFor();
   await page.getByRole("link", { name: "Start converting music" }).click();
   await page.getByRole("heading", { name: "Beats Your Music" }).waitFor();
 
