@@ -117,10 +117,23 @@ async function main() {
   await page.getByText("Ready to convert").waitFor({ timeout: 20000 });
 
   await page.getByLabel("Source BPM").fill("120");
+  if (await page.getByText("Presets", { exact: true }).count()) {
+    throw new Error("Target BPM still uses preset copy instead of custom BPM controls.");
+  }
+  const targetBpmInput = page.getByRole("spinbutton", { name: "Target BPM" });
+  await targetBpmInput.fill("172");
+  await page.getByRole("button", { name: "Increase target BPM" }).click();
+  if ((await targetBpmInput.inputValue()) !== "173") {
+    throw new Error("Increase target BPM control did not step the custom BPM value.");
+  }
+  await page.getByRole("button", { name: "Decrease target BPM" }).click();
+  if ((await targetBpmInput.inputValue()) !== "172") {
+    throw new Error("Decrease target BPM control did not step the custom BPM value.");
+  }
   await page.getByLabel("Mix metronome into converted audio").check();
   await page.getByRole("button", { name: "Drum set" }).click();
   await page.getByRole("button", { name: "High" }).click();
-  await page.getByRole("button", { name: "Convert to 180 BPM" }).click();
+  await page.getByRole("button", { name: "Convert to 172 BPM" }).click();
   await page.getByRole("link", { name: "Download", exact: true }).waitFor({ timeout: 30000 });
   await page.getByText("Metronome aligned").waitFor({ timeout: 30000 });
   await page.getByText("Metronome mixed").waitFor({ timeout: 30000 });

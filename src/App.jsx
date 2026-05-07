@@ -8,7 +8,6 @@ import {
 import { getSeoPage } from "./seo.js";
 
 const DEFAULT_TARGET_BPM = 180;
-const TARGET_PRESETS = [160, 170, 180, 190];
 const METRONOME_VOLUME_LEVELS = ["low", "medium", "high"];
 const METRONOME_SOUND_TYPES = ["pulse", "drum"];
 const ACCEPTED_TYPES = "audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.aiff,.aif";
@@ -45,6 +44,12 @@ function clampBpm(value) {
   const bpm = Number(value);
   if (!Number.isFinite(bpm)) return "";
   return Math.min(260, Math.max(40, bpm));
+}
+
+function stepTargetBpm(value, delta) {
+  const bpm = Number(value || DEFAULT_TARGET_BPM);
+  const base = Number.isFinite(bpm) ? bpm : DEFAULT_TARGET_BPM;
+  return clampBpm(Math.round(base + delta));
 }
 
 function sourceModeLabel(mode) {
@@ -595,34 +600,44 @@ function App() {
                 />
               </label>
 
-              <label className="field">
-                <span>{t("conversion.targetBpm")}</span>
-                <input
-                  type="number"
-                  min="40"
-                  max="260"
-                  step="1"
-                  value={activeTrack?.targetBpm || DEFAULT_TARGET_BPM}
-                  onChange={(event) => updateActiveTrack({ targetBpm: clampBpm(event.target.value) })}
-                  disabled={!activeTrack}
-                />
-              </label>
+              <div className="field target-bpm-field">
+                <label htmlFor="target-bpm-input">{t("conversion.targetBpm")}</label>
+                <div className="bpm-stepper">
+                  <button
+                    className="stepper-button"
+                    type="button"
+                    onClick={() => updateActiveTrack({ targetBpm: stepTargetBpm(activeTrack?.targetBpm, -1) })}
+                    disabled={!activeTrack}
+                    aria-label={t("conversion.targetDecrease")}
+                  >
+                    -
+                  </button>
+                  <input
+                    id="target-bpm-input"
+                    type="number"
+                    min="40"
+                    max="260"
+                    step="1"
+                    value={activeTrack ? activeTrack.targetBpm : DEFAULT_TARGET_BPM}
+                    onChange={(event) => updateActiveTrack({ targetBpm: clampBpm(event.target.value) })}
+                    disabled={!activeTrack}
+                    aria-describedby="target-bpm-help"
+                  />
+                  <button
+                    className="stepper-button"
+                    type="button"
+                    onClick={() => updateActiveTrack({ targetBpm: stepTargetBpm(activeTrack?.targetBpm, 1) })}
+                    disabled={!activeTrack}
+                    aria-label={t("conversion.targetIncrease")}
+                  >
+                    +
+                  </button>
+                </div>
+                <small id="target-bpm-help" className="field-hint">
+                  {t("conversion.targetHint")}
+                </small>
+              </div>
             </div>
-
-            <fieldset className="preset-row" disabled={!activeTrack}>
-              <legend>{t("conversion.presets")}</legend>
-              {TARGET_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  className={Number(activeTrack?.targetBpm) === preset ? "is-selected" : ""}
-                  type="button"
-                  onClick={() => updateActiveTrack({ targetBpm: preset })}
-                  aria-pressed={Number(activeTrack?.targetBpm) === preset}
-                >
-                  {preset}
-                </button>
-              ))}
-            </fieldset>
 
             <fieldset className="segmented" disabled={!activeTrack}>
               <legend>{t("conversion.tempoCorrection")}</legend>

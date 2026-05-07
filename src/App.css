@@ -618,7 +618,7 @@ h2 {
 }
 
 .field span,
-.preset-row legend,
+.field > label,
 .segmented legend,
 .metronome-sound legend,
 .metronome-volume legend {
@@ -639,7 +639,6 @@ h2 {
   font-weight: 800;
 }
 
-.preset-row,
 .segmented,
 .metronome-sound,
 .metronome-volume {
@@ -652,7 +651,6 @@ h2 {
   border: 0;
 }
 
-.preset-row legend,
 .segmented legend,
 .metronome-sound legend,
 .metronome-volume legend {
@@ -660,7 +658,6 @@ h2 {
   margin-bottom: 2px;
 }
 
-.preset-row button,
 .segmented button,
 .metronome-sound button,
 .metronome-volume button {
@@ -675,13 +672,66 @@ h2 {
   cursor: pointer;
 }
 
-.preset-row button.is-selected,
 .segmented button.is-selected,
 .metronome-sound button.is-selected,
 .metronome-volume button.is-selected {
   border-color: rgba(156, 240, 50, 0.78);
   background: var(--lime);
   color: #101609;
+}
+
+.bpm-stepper {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b1012;
+  overflow: hidden;
+}
+
+.bpm-stepper input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
+}
+
+.stepper-button {
+  display: grid;
+  min-width: 52px;
+  min-height: 56px;
+  place-items: center;
+  border: 0;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 1.38rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.stepper-button:first-child {
+  border-right: 1px solid var(--line);
+}
+
+.stepper-button:last-child {
+  border-left: 1px solid var(--line);
+}
+
+.stepper-button:hover:not(:disabled) {
+  background: rgba(156, 240, 50, 0.14);
+  color: var(--lime);
+}
+
+.stepper-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .metronome-sound,
